@@ -2233,6 +2233,19 @@ applyTheme();{const mq=matchMedia('(prefers-color-scheme: dark)');if(mq.addEvent
 
 // ===================== START =====================
 resize();
+// ---------- winter look: lawn, roofs and foliage are repainted as snow once the yard is built ----------
+try{
+ const green=(r,g,b)=>g>r*1.04&&g>b*1.08,SNOW=new THREE.Color(0xf2f7fb),done=new Set();
+ const paint=(img,amt)=>{const c=img&&img.getContext&&img.getContext('2d');if(!c)return;const d=c.getImageData(0,0,img.width,img.height),p=d.data;
+  for(let i=0;i<p.length;i+=4){if(p[i+3]<8||p[i+1]<30||!green(p[i],p[i+1],p[i+2]))continue;const s=222+(p[i]*.3+p[i+1]*.59+p[i+2]*.11)/255*33;p[i]+=(s-5-p[i])*amt;p[i+1]+=(s-p[i+1])*amt;p[i+2]+=(Math.min(255,s+10)-p[i+2])*amt;}
+  c.putImageData(d,0,0);};
+ const tint=(a,amt)=>{if(!a||done.has(a))return;done.add(a);for(let i=0;i<a.count;i++){const r=a.getX(i),g=a.getY(i),b=a.getZ(i);if(green(r,g,b))a.setXYZ(i,r+(.88-r)*amt,g+(.92-g)*amt,b+(.96-b)*amt);}a.needsUpdate=true;};
+ scene.traverse(o=>{if(!o.isMesh)return;let std=false;
+  for(const m of [].concat(o.material||[])){if(!m.isMeshStandardMaterial||m===M.pc)continue;std=true;const amt=(m.alphaTest||m.vertexColors)?0.62:0.95;
+   if(m.map&&m.map.image&&!done.has(m.map.image)){done.add(m.map.image);paint(m.map.image,amt);m.map.needsUpdate=true;}
+   if(!done.has(m)){done.add(m);if(m.color&&green(m.color.r,m.color.g,m.color.b))m.color.lerp(SNOW,amt);}}
+  if(std){if(o.geometry&&o.geometry.attributes)tint(o.geometry.attributes.color,0.62);tint(o.instanceColor,0.62);}});
+}catch(e){console.warn('winter look skipped',e);}
 for(let k=1;k<=3;k++)PK[k].G.visible=true;
 try{renderer.compile(scene,cam);}catch(e){}
 PK[2].G.visible=false;PK[3].G.visible=false;
