@@ -127,10 +127,9 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
 .v3b{min-height:36px;padding:6px 12px;border-radius:999px;font-size:13px;gap:6px}
 .v3b i{font-style:normal;font:800 10px/1.3 var(--f-display);padding:1px 5px;border-radius:5px;background:var(--accent);color:var(--accent-ink)}
 /* brand chip */
-#brand{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;display:flex;align-items:center;gap:10px;padding:7px 12px 7px 8px;background:var(--chip);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-s);z-index:3;pointer-events:none}
-#brand .mk{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font:900 15px/1 var(--f-display);letter-spacing:-.04em}
-#brand b{display:block;font:800 13.5px/1.1 var(--f-display);letter-spacing:.01em}
-#brand span{display:block;font:600 11.5px/1.2 var(--f-body);color:var(--muted)}
+#brand{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:12px;display:flex;align-items:center;gap:10px;padding:7px 12px 7px 8px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-s);z-index:3;pointer-events:none}
+#brand img{display:block;height:40px;width:auto}
+#brand span{display:block;font:600 11.5px/1.2 var(--f-body);color:#55675d}
 /* tools */
 #tools{position:absolute;top:12px;right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:6px;z-index:3;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 290px)}
 .seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-s)}
@@ -217,7 +216,7 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
  #contact .ph strong{font-size:21px}
  #contact .acts{margin:0;flex-wrap:nowrap}
  #brand span{display:none}
- #brand{padding:5px 10px 5px 6px}#brand .mk{width:28px;height:28px;font-size:13px}
+ #brand{padding:5px 10px 5px 6px}#brand img{height:32px}
  #tools{left:auto;top:58px;max-width:calc(100% - 24px)}
  #pkgs{bottom:10px;gap:6px;width:calc(100% - 16px)}
  .pk{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;padding:8px 6px;min-height:0;gap:4px}
@@ -234,7 +233,7 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
 @media (orientation:landscape) and (max-height:540px){
  #app{grid-template-columns:minmax(0,1fr) min(44vw,330px);grid-template-rows:minmax(0,1fr)}
  #panel{border-left:1px solid var(--line);border-top:0}
- #brand span{display:none}#brand{padding:5px 10px 5px 6px}#brand .mk{width:28px;height:28px;font-size:13px}
+ #brand span{display:none}#brand{padding:5px 10px 5px 6px}#brand img{height:32px}
  #tools{top:12px;max-width:calc(100% - 175px)}
  #pkgs{bottom:8px;gap:6px;width:calc(100% - 16px)}
  .pk{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;padding:6px;min-height:0;gap:2px}
@@ -250,7 +249,7 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
  <div id="stage">
   <canvas id="gl" tabindex="0" aria-label="Айлын хашааны 3D загвар. Чирж эргүүлнэ, дугуйгаар ойртуулна."></canvas>
   <svg id="lines" aria-hidden="true"></svg><div id="labels" aria-hidden="true"></div>
-  <div id="brand"><div class="mk">PC</div><div><b>Пластик Центр</b><span>Бүгдийг нэг дороос</span></div></div>
+  <div id="brand"><img src="logo.png" alt="Plastic Center" width="100" height="40"><span>Бүгдийг нэг дороос</span></div>
   <div id="tools">
    <div class="seg" role="group" aria-label="Камер"><button id="bNear" aria-pressed="false" title="Тухайн багцыг ойроос харах">Ойроос</button><button id="bAll" aria-pressed="true" title="Бүтнээр нь холоос харах">Холоос</button></div>
   </div>
@@ -411,11 +410,11 @@ const TILE=(()=>{let ts=4521;const tr=()=>{ts=(ts*16807)%2147483647;return ts/21
  {const PW=1.2*S,PH=0.44*S,PX=N/2+0.25*S-PW/2,PY=N/2-0.5*S-PH/2,MG=0.05*S;
   both(g=>{g.beginPath();g.rect(PX-MG,PY-MG,PW+2*MG,PH+2*MG);},HF,CF);
   both(g=>rrect(g,PX-ol,PY-ol,PW+2*ol,PH+2*ol,0.06*S),'#3c3c3c','rgba(38,42,48,.4)');both(g=>rrect(g,PX,PY,PW,PH,0.04*S),'#d6d6d6','#9fa4ab');
-  const lg=(g,st)=>{g.fillStyle=st;g.textBaseline='middle';g.font=`900 ${Math.round(PH*0.74)}px Montserrat,Arial,sans-serif`;
-    const pw=g.measureText('PC').width,sx=Math.min(1,(PW*0.36)/pw);g.save();g.translate(PX+PW*0.06,PY+PH*0.54);g.scale(sx,1);g.fillText('PC',0,0);g.restore();
+  const lg=(g,st,bg)=>{g.fillStyle=st;g.textBaseline='middle';g.font=`900 ${Math.round(PH*0.74)}px Montserrat,Arial,sans-serif`;
+    const k=(PH*0.8)/170;g.save();g.translate(PX+PW*0.06,PY+PH*0.1);g.scale(k,k);g.beginPath();g.rect(0,0,122,170);g.fill();g.beginPath();g.arc(121,105,65,0,TAU);g.fill();g.strokeStyle=bg;g.lineWidth=9;g.beginPath();g.moveTo(20,152);g.lineTo(20,20);g.lineTo(70,20);g.arc(70,58,38,-Math.PI/2,Math.PI/2);g.lineTo(50,96);g.stroke();g.beginPath();g.moveTo(121,105);g.lineTo(186,105);g.stroke();g.fillStyle=bg;g.beginPath();g.arc(121,105,13,0,TAU);g.fill();g.restore();
     g.font=`800 ${Math.round(PH*0.29)}px Montserrat,Arial,sans-serif`;const tw=Math.max(g.measureText('PLASTIC').width,g.measureText('CENTER').width),s2=Math.min(1,(PW*0.5)/tw);
     for(const [t,y] of [['PLASTIC',0.31],['CENTER',0.71]]){g.save();g.translate(PX+PW*0.46,PY+PH*y);g.scale(s2,1);g.fillText(t,0,0);g.restore();}};
-  lg(h,'#7a7a7a');lg(c,'#4a5159');}
+  lg(h,'#7a7a7a','#d6d6d6');lg(c,'#4a5159','#9fa4ab');}
  // light weathering on the colour only
  for(let i=0;i<Math.round(110*K*K)+24;i++){const x=tr()*N,y=tr()*N,r=(0.6+tr()*1.9)*K+0.4;c.fillStyle=tr()<0.3?'rgba(150,112,72,.16)':'rgba(70,74,80,.10)';c.beginPath();c.arc(x,y,r,0,TAU);c.fill();}
  // normal map from the (softened) height field; v runs up the canvas (flipY), so +y in tangent space is up the image
@@ -2240,10 +2239,8 @@ for(let k=1;k<=3;k++)PK[k].G.visible=true;
 try{renderer.compile(scene,cam);}catch(e){}
 PK[2].G.visible=false;PK[3].G.visible=false;
 renderSheet(1);sheetEl.classList.remove('fade');syncCards(1);syncTools();reframe(true);
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{const g=pcC.getContext('2d');g.clearRect(0,0,pcC.width,pcC.height);
-  g.fillStyle='#1a9a58';rrect(g,4,4,pcC.width-8,pcC.height-8,34);g.fill();g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=6;rrect(g,18,18,pcC.width-36,pcC.height-36,24);g.stroke();
-  g.fillStyle='#fff';g.font='900 120px Montserrat,Arial,sans-serif';g.textBaseline='middle';g.fillText('PC',44,pcC.height/2+6);g.font='800 54px Montserrat,Arial,sans-serif';g.fillText('PLASTIC',236,pcC.height/2-30);g.fillText('CENTER',236,pcC.height/2+34);
-  M.pc.map.needsUpdate=true;for(const L of LBLS)L.w=0;});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{for(const L of LBLS)L.w=0;});
+{const lg=new Image();lg.onload=()=>{const g=pcC.getContext('2d'),W=pcC.width,H=pcC.height;g.clearRect(0,0,W,H);g.fillStyle='#fff';rrect(g,4,4,W-8,H-8,34);g.fill();const s=Math.min((W-72)/lg.width,(H-56)/lg.height),w=lg.width*s,h=lg.height*s;g.drawImage(lg,(W-w)/2,(H-h)/2,w,h);M.pc.map.needsUpdate=true;};lg.src='logo.png';}
 let last=performance.now(),tNow=0,raf=0;
 function loop(now){raf=requestAnimationFrame(loop);if(document.hidden){last=now;return;}const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;
  if(VW.open){vwUpdate(dt);renderer.render(VW.scene,VW.cam);return;}tNow+=dt;update(dt,tNow);renderer.render(scene,cam);placeLabels();}
