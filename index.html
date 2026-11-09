@@ -246,8 +246,7 @@ body.clean #exitClean{display:inline-flex}
   <svg id="lines" aria-hidden="true"></svg><div id="labels" aria-hidden="true"></div>
   <div id="brand"><div class="mk">PC</div><div><b>Пластик Центр</b><span>Бүгдийг нэг дороос</span></div></div>
   <div id="tools">
-   <div class="seg" role="group" aria-label="Харагдац"><button id="bIn" aria-pressed="false" title="Танкийг хагалж дотор талыг харуулах">Дотор тал</button></div>
-   <div class="seg" role="group" aria-label="Камер"><button id="bAll" aria-pressed="true" title="Хашааг бүтнээр нь харах">Хашаа</button><button id="bNear" aria-pressed="false" title="Тухайн багцыг ойроос харах">Ойроос</button></div>
+   <div class="seg" role="group" aria-label="Камер"><button id="bNear" aria-pressed="false" title="Тухайн багцыг ойроос харах">Ойроос</button><button id="bAll" aria-pressed="true" title="Бүтнээр нь холоос харах">Холоос</button></div>
    <div class="seg opt" role="group" aria-label="Хөдөлгөөн"><button id="bSpin" aria-pressed="false" title="Хашааг аажуухан эргүүлэх">Эргүүлэх</button><button id="bAuto" aria-pressed="false" title="Гурван багцыг ээлжлэн автоматаар харуулах">▶ Авто</button><button id="bClean" title="Самбаруудыг нууж зөвхөн хашааг үлдээх (бичлэг хийхэд)">Цэвэр дэлгэц</button></div>
   </div>
   <button id="exitClean" title="Самбаруудыг буцааж харуулах">Самбар харуулах</button>
@@ -2000,7 +1999,7 @@ function renderSheet(k){const d=INFO[k];const ck=a=>`<ul class="checks">${a.map(
  h+=`<p class="yard">${d.yard}</p>`;
  sheetEl.classList.add('fade');setTimeout(()=>{sheetEl.innerHTML=h.replace('%SIZES%',()=>sizeBlock(k));sheetEl.classList.remove('fade');},140);}
 function syncCards(k){document.querySelectorAll('.pk').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.k===k?'true':'false'));}
-function syncTools(){const set=(id,on)=>{const b=$(id);if(b)b.setAttribute('aria-pressed',on?'true':'false');};set('bIn',ST.ins[ST.tr?ST.tr.b:ST.cur]);set('bSpin',ST.spin);set('bAuto',ST.auto);set('bAll',ST.view==='yard');set('bNear',ST.view==='near');}
+function syncTools(){const set=(id,on)=>{const b=$(id);if(b)b.setAttribute('aria-pressed',on?'true':'false');};set('bSpin',ST.spin);set('bAuto',ST.auto);set('bAll',ST.view==='yard');set('bNear',ST.view==='near');}
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();let toastT=0,tankPop=0,popK=0;
 function showToast(html){const t=$('toast');if(!t)return;t.innerHTML=html;t.hidden=false;t.style.opacity=1;toastT=3.2;}
 function setTank(k,i){const T=PK[k]&&PK[k].tank;if(!T||i===T.i)return;
@@ -2087,8 +2086,7 @@ window.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('inp
 // ===================== BUTTONS =====================
 document.querySelectorAll('.pk').forEach(b=>b.addEventListener('click',()=>{ST.auto=false;syncTools();goPkg(+b.dataset.k);}));
 sheetEl.addEventListener('click',e=>{const v3=e.target.closest('[data-v3d]');if(v3){if(!ST.tr)openViewer(v3.dataset.v3d,ST.cur);return;}const z=e.target.closest('.szb');if(z){if(PK[ST.cur].tank&&!ST.tr)setTank(ST.cur,+z.dataset.size);return;}const b=e.target.closest('.flowbtn');if(!b)return;const k=+b.dataset.flow;if(ST.tr||ST.cur!==k)return;ST.auto=false;ST.cut=true;ST.ins[k]=true;ST.view='near';ST.autoFrame=true;reframe(false);syncTools();});
-$('bIn').onclick=()=>{const k=ST.tr?ST.tr.b:ST.cur;ST.ins[k]=!ST.ins[k];if(ST.ins[k]&&ST.view!=='near'){ST.view='near';ST.autoFrame=true;reframe(false);}syncTools();};
-$('bAll').onclick=()=>{ST.view='yard';ST.autoFrame=true;reframe(false);syncTools();};
+$('bAll').onclick=()=>{ST.ins=[false,false,false,true];ST.view='yard';ST.autoFrame=true;reframe(false);syncTools();};
 $('bNear').onclick=()=>{ST.view='near';ST.autoFrame=true;reframe(false);syncTools();};
 $('bSpin').onclick=()=>{ST.spin=!ST.spin;syncTools();};
 $('bAuto').onclick=()=>{ST.auto=!ST.auto;ST.autoT=4;syncTools();};
