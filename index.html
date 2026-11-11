@@ -41,7 +41,17 @@ button:hover{background:var(--surface2)}
 button:focus-visible,#gl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-#app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 384px;grid-template-rows:minmax(0,1fr)}
+#app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 384px;grid-template-rows:minmax(0,1fr);transition:grid-template-columns .32s ease}
+/* the info panel slides away to the side: wide screens fold its column to 0, phones show it as a drawer over the 3D (closed at the start) */
+body.pclosed #app{grid-template-columns:minmax(0,1fr) 0px}
+body.pclosed #panel{visibility:hidden;overflow:hidden;transition:visibility 0s linear .32s}
+body.pslide #panel{overflow:hidden}
+body.pslide #panel>section,body.pclosed #panel>section{min-width:366px}   /* the text keeps its width while the panel slides */
+#pTab{min-height:36px;padding:7px 13px;border-radius:999px;box-shadow:var(--shadow-s);font-size:13px;gap:7px}
+#pTab b{font:900 18px/1 var(--f-display);color:var(--accent)}
+body.pclosed #pTab{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+body.pclosed #pTab b{color:var(--accent-ink)}
+#pClose,#pShade{display:none}
 #stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:linear-gradient(180deg,var(--stage-a),var(--stage-b));touch-action:none;user-select:none;-webkit-user-select:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;outline-offset:-3px}
 #lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -131,10 +141,22 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
 #brand img{display:block;height:40px;width:auto}
 #brand span{display:block;font:600 11.5px/1.2 var(--f-body);color:#55675d}
 /* tools */
-#tools{position:absolute;top:12px;right:max(12px,env(safe-area-inset-right,0px));display:flex;gap:6px;z-index:3;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 290px)}
-.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-s)}
-.seg button{border:0;border-radius:0;border-right:1px solid var(--line);min-height:34px}
-.seg button:last-child{border-right:0}
+#tools{position:absolute;top:12px;right:max(12px,env(safe-area-inset-right,0px));display:flex;flex-direction:row;align-items:center;gap:8px;z-index:3;max-width:calc(100% - 290px)}
+#hBtn{width:36px;height:36px;min-height:0;padding:0;border-radius:50%;justify-content:center;font:900 16px/1 var(--f-display);box-shadow:var(--shadow-s)}
+/* guide: how to look around — over the 3D on the first visit, again from «?» */
+#guide{position:absolute;inset:0;z-index:8;display:grid;place-items:center;padding:16px;background:rgba(8,20,14,.38);opacity:0;transition:opacity .2s}
+#guide.on{opacity:1}#guide[hidden]{display:none}
+.gcard{width:min(380px,100%);max-height:100%;overflow:auto;box-sizing:border-box;background:var(--surface);color:var(--ink);border-radius:16px;box-shadow:var(--shadow);padding:18px 18px 14px;display:grid;gap:12px}
+.gcard h2{margin:0;font:800 19px/1.2 var(--f-display)}
+.glist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.glist li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:center}
+.gi{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent-2);display:grid;place-items:center;font:900 12px/1 var(--f-display);font-style:normal}
+.gi svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.glist b{display:block;font:800 14px/1.2 var(--f-display)}
+.glist span{display:block;margin-top:2px;font:600 13px/1.35 var(--f-body);color:var(--muted)}
+#gOk{min-height:42px;justify-content:center;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:14px}
+#gOk:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.gnote{margin:-4px 0 0;font:600 12px/1.3 var(--f-body);color:var(--muted);text-align:center}
 /* package cards */
 #pkgs{position:absolute;left:0;right:0;bottom:14px;margin:0 auto;width:min(780px,calc(100% - 24px));display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;z-index:3}
 .pk{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;gap:10px;text-align:left;padding:10px 12px 10px 10px;min-height:76px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);box-shadow:var(--shadow);white-space:normal;transition:transform .18s ease,border-color .18s ease,background .18s ease}
@@ -205,11 +227,8 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
 #contact .acts a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #contact .acts svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (pointer:fine){#contact .acts a.call{display:none}}
-@media (pointer:coarse){.seg button{min-height:40px}}
 @media (max-width:1100px){#tools{max-width:calc(100% - 250px)}}
 @media (max-width:860px){
- #app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,60fr) minmax(0,40fr)}
- #panel{border-left:0;border-top:1px solid var(--line)}
  #sheet{padding:16px max(16px,env(safe-area-inset-left,0px)) 6px max(16px,env(safe-area-inset-right,0px))}
  #contact{padding:10px max(16px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));position:sticky;bottom:0;z-index:2;background:var(--surface);grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 10px;box-shadow:0 -8px 18px rgba(16,36,26,.08)}
  #contact p,#bCopy{display:none}
@@ -217,7 +236,7 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
  #contact .acts{margin:0;flex-wrap:nowrap}
  #brand span{display:none}
  #brand{padding:5px 10px 5px 6px}#brand img{height:32px}
- #tools{left:auto;top:58px;max-width:calc(100% - 24px)}
+ #tools{left:auto;top:12px;max-width:calc(100% - 24px)}
  #pkgs{bottom:10px;gap:6px;width:calc(100% - 16px)}
  .pk{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center;padding:8px 6px;min-height:0;gap:4px}
  .pk svg{width:44px;height:30px}
@@ -228,11 +247,9 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
  .checks{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:560px){.lab small{display:none}.lab{font-size:11px;padding:3px 7px}.lab.in{font-size:11.5px;padding:0}.lab.in.sm{font-size:9.5px}}
-@media (max-width:520px){.pk svg{display:none}.pk .tt{font-size:11px}#tools .seg button{padding:6px 8px;font-size:11.5px}}
+@media (max-width:520px){.pk svg{display:none}.pk .tt{font-size:11px}}
 @media (max-width:420px){#contact .acts a.msg{width:44px;padding:8px 0}#contact .acts a.msg span{display:none}}
 @media (orientation:landscape) and (max-height:540px){
- #app{grid-template-columns:minmax(0,1fr) min(44vw,330px);grid-template-rows:minmax(0,1fr)}
- #panel{border-left:1px solid var(--line);border-top:0}
  #brand span{display:none}#brand{padding:5px 10px 5px 6px}#brand img{height:32px}
  #tools{top:12px;max-width:calc(100% - 175px)}
  #pkgs{bottom:8px;gap:6px;width:calc(100% - 16px)}
@@ -243,17 +260,45 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
  #contact{padding:8px 12px max(8px,env(safe-area-inset-bottom,0px));position:sticky;bottom:0;z-index:2;background:var(--surface);grid-template-columns:minmax(0,1fr);gap:6px;box-shadow:0 -8px 18px rgba(16,36,26,.08)}
  #contact p,#bCopy{display:none}#contact .ph strong{font-size:19px}#contact .acts{margin:0;flex-wrap:nowrap}
 }
+/* phones and short landscape screens: the 3D fills the screen; the info is a drawer from the right with a shade behind it */
+@media (max-width:860px),(orientation:landscape) and (max-height:540px){
+ #app,body.pclosed #app{grid-template-columns:minmax(0,1fr);transition:none}
+ #panel>section,body.pslide #panel>section,body.pclosed #panel>section{min-width:0}
+ #panel{position:fixed;top:0;right:0;bottom:0;z-index:20;width:min(88vw,400px);border-left:1px solid var(--line);box-shadow:-12px 0 32px rgba(8,20,14,.22);transform:translateX(0);transition:transform .3s ease,visibility 0s}
+ body.pclosed #panel{transform:translateX(102%);transition:transform .3s ease,visibility 0s linear .3s}
+ #pShade{display:block;position:fixed;inset:0;z-index:19;background:rgba(8,20,14,.34)}
+ body.pclosed #pShade{display:none}
+ #pClose{display:inline-flex;flex:none;position:sticky;top:10px;align-self:flex-end;z-index:3;width:38px;height:38px;min-height:0;margin:10px 10px -48px 0;padding:0;justify-content:center;border-radius:50%;font-size:16px;box-shadow:var(--shadow-s)}
+}
+@media (orientation:landscape) and (max-height:540px){#panel{width:min(60vw,380px)}}
+@media (prefers-reduced-motion:reduce){#app,#panel{transition:none!important}}
 @media (prefers-reduced-motion:reduce){.pk,#sheet,#hint,#toast,#viewer{transition:none}#load i{animation-duration:3s}}
 </style>
 <div id="app">
  <div id="stage">
-  <canvas id="gl" tabindex="0" aria-label="Айлын хашааны 3D загвар. Чирж эргүүлнэ, дугуйгаар ойртуулна."></canvas>
+  <canvas id="gl" tabindex="0" aria-label="Айлын хашааны 3D загвар. Чирж эргүүлнэ, дугуйгаар томруулна, баруун дээд буланд жолоо бий."></canvas>
   <svg id="lines" aria-hidden="true"></svg><div id="labels" aria-hidden="true"></div>
   <div id="brand"><img src="logo.png" alt="Plastic Center" width="100" height="40"><span>Бүгдийг нэг дороос</span></div>
   <div id="tools">
-   <div class="seg" role="group" aria-label="Камер"><button id="bNear" aria-pressed="false" title="Тухайн багцыг ойроос харах">Ойроос</button><button id="bAll" aria-pressed="true" title="Бүтнээр нь холоос харах">Холоос</button></div>
+   <button type="button" id="hBtn" title="Хэрхэн үзэх вэ?" aria-label="Хэрхэн үзэх вэ?" aria-controls="guide">?</button>
+   <button type="button" id="pTab" aria-controls="panel" aria-expanded="true">Мэдээлэл <b aria-hidden="true">›</b></button>
   </div>
   <div id="hint">Багц дээр дарахад хашаа хувирна</div>
+  <div id="guide" hidden role="dialog" aria-modal="true" aria-labelledby="gT">
+   <div class="gcard">
+    <h2 id="gT">Хэрхэн үзэх вэ?</h2>
+    <ul class="glist">
+     <li><i class="gi" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></i><div><b>Эргүүлэх</b><span data-m="Хулганаар чирнэ" data-t="Нэг хуруугаар чирнэ">Хулганаар чирнэ</span></div></li>
+     <li><i class="gi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5M11 8v6M8 11h6"/></svg></i><div><b>Томруулах</b><span data-m="Хулганы дугуйг эргүүлнэ — заасан газар руугаа томорно" data-t="Хоёр хуруугаар чимхэнэ — хурууны дунд руугаа томорно">Хулганы дугуйг эргүүлнэ — заасан газар руугаа томорно</span></div></li>
+     <li><i class="gi" aria-hidden="true">3D</i><div><b>3D-ээр үзэх</b><span>«3D» шошго, танк, насос, суултуур дээр дарахад тусад нь эргүүлж, дотор талыг нь харна</span></div></li>
+     <li><i class="gi" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></i><div><b>Багц солих</b><span>Доорх багц дээр дарахад хашаа хувирна</span></div></li>
+     <li><i class="gi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg></i><div><b>Мэдээлэл</b><span>«Мэдээлэл» товчоор багцын дэлгэрэнгүй, утасны дугаар гарна</span></div></li>
+     <li><i class="gi" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></i><div><b>Анхны харагдац</b><span data-m="Хоёр удаа дарахад буцна" data-t="Хоёр удаа товшиход буцна">Хоёр удаа дарахад буцна</span></div></li>
+    </ul>
+    <button type="button" id="gOk">Ойлголоо, үзье</button>
+    <p class="gnote">Энэ зааврыг «?» товчоор дахин нээж болно.</p>
+   </div>
+  </div>
   <div id="toast" hidden aria-live="polite"></div>
   <div id="viewer" hidden role="dialog" aria-label="Бүтээгдэхүүнийг 3D-ээр үзэх">
    <svg id="vLines" aria-hidden="true"></svg><div id="vLabels" aria-hidden="true"></div>
@@ -269,7 +314,9 @@ body.viewing #labels,body.viewing #lines,body.viewing #pkgs,body.viewing #tools,
   <div id="load"><i></i>Хашааг зурж байна…</div>
   <div id="fb" hidden><div>3D дүрслэл энэ төхөөрөмж дээр ачаалагдсангүй. Өөр хөтөч эсвэл компьютероор нээгээд үзээрэй.</div></div>
  </div>
+ <div id="pShade" aria-hidden="true"></div>
  <aside id="panel" aria-label="Багцын мэдээлэл">
+  <button type="button" id="pClose" aria-label="Мэдээллийг хаах">✕</button>
   <section id="sheet" aria-live="polite"></section>
   <section id="contact">
    <div class="ci">
@@ -342,6 +389,8 @@ const CUT=new THREE.Plane(V(0,0,-1),0);
 const OFFP=1e4;
 const SW=[null,new THREE.Plane(V(1,0,0),OFFP),new THREE.Plane(V(1,0,0),OFFP),new THREE.Plane(V(1,0,0),OFFP)];
 const TC=[null,new THREE.Plane(V(0,0,-1),OFFP),new THREE.Plane(V(0,0,-1),OFFP),new THREE.Plane(V(0,0,-1),OFFP)];
+const NCUT=new THREE.Plane(V(0,0,-1),OFFP);
+const HF={toilet:null,pos:V(0,0,0),mats:[],k:0};   // Багц 1: the house fades near the toilet   // Багц 1: keeps only the back half of the pump's rings and lid (set to the shaft's z)
 const CUTONLY=[CUT];
 
 // ---------- background, environment, lights ----------
@@ -1101,20 +1150,36 @@ function photoTank(par,R,n,MH,look,lid){
      else if(i%2===0)bolt.push(nut(rb*si,y1+0.005,rb*co,0.011,0.01,'y'));}}                          // the lid bolts on the top rim
  add(mergeGeos(rib),TM.rib,0,0,0,{parent:par});add(mergeGeos(line),TM.line,0,0,0,{parent:par,cast:false});add(mergeGeos(bolt),TM.bolt,0,0,0,{parent:par,cast:false});
  add(new THREE.CylinderGeometry(R+0.004,R+0.004,0.03,S),TM.rib,0,yb+0.015,0,{parent:par,cast:false});        // floor
- if(lid==='cone')tankConeLid(par,R,ns,s0,TM);else if(lid)tankFlatLid(par,R,ns,s0,TM);else ringLid(par,R+0.035,0.0,mTankLid);   // the yard: a flat lid the pump rings / the cabin stand on
+ if(lid==='cone')tankConeLid(par,R,ns,s0,TM);else if(lid==='step')tankStepLid(par,R,ns,s0,TM);else if(lid)tankFlatLid(par,R,ns,s0,TM);else ringLid(par,R+0.035,0.0,mTankLid);   // the yard: a flat lid the pump rings / the cabin stand on
  tankFill(par,R,yb+0.01,yb+0.1+Math.min(H*0.16,0.3),yb+H*0.55);
  return {yb};}
-// flat lid of the Ø1 and Ø1.5 m tanks: panels inside the top rim, raised radial seams, a stiffening ring, a square hatch with its cover
-function tankFlatLid(par,R,ns,s0,TM){const S=SMALL?64:96,a=R>0.6?0.3:0.22,geo=[],bl=[];
+// flat lid of the Ø1 and Ø1.5 m tanks: panels inside the top rim, raised radial seams, a stiffening ring and, as on the product photo,
+// a round opening with a collar and a round cast cover (noHatch: the Ø2 m step lid covers the centre instead)
+function tankFlatLid(par,R,ns,s0,TM,noHatch){const S=SMALL?64:96,a=R>0.6?0.3:0.22,geo=[],bl=[];
  geo.push(tkUV(new THREE.CylinderGeometry(R+0.004,R+0.004,0.03,S),TAU*R,0.1).translate(0,-0.022,0));
  for(let k=0;k<ns;k++){const ang=s0+k*TAU/ns,r0=a*1.15,r1=R-0.01,L=r1-r0,rm=(r0+r1)/2;geo.push(placed(new THREE.BoxGeometry(0.05,0.014,L),rm*Math.sin(ang),-0.004,rm*Math.cos(ang),0,ang,0));
    for(let t=0.15;t<0.95;t+=0.24){const r=r0+L*t;bl.push(placed(new THREE.CylinderGeometry(0.009,0.009,0.01,6),r*Math.sin(ang),0.006,r*Math.cos(ang)));}}
  geo.push(tkUV(lathe([[R*0.66-0.02,-0.01],[R*0.66-0.02,0.0],[R*0.66+0.02,0.0],[R*0.66+0.02,-0.01]],S),TAU*R,0.1));
- geo.push(placed(new THREE.BoxGeometry(2*a,0.024,2*a),0,-0.002,0));                                         // hatch frame
- geo.push(placed(new THREE.BoxGeometry(2*a-0.05,0.012,2*a-0.05),0,0.014,0));                               // cover
- for(const sx of [-1,1])geo.push(placed(new THREE.BoxGeometry(0.11,0.016,0.024),sx*a*0.45,0.026,0));       // two lifting handles
- for(const [x,z] of [[-1,-1],[-1,1],[1,-1],[1,1]])bl.push(placed(new THREE.CylinderGeometry(0.01,0.01,0.01,6),x*(a-0.04),0.022,z*(a-0.04)));
- add(mergeGeos(geo),TM.lid,0,0,0,{parent:par});add(mergeGeos(bl),TM.bolt,0,0,0,{parent:par,cast:false});}
+ if(!noHatch)geo.push(lathe([[a-0.03,-0.012],[a-0.03,0.03],[a+0.03,0.03],[a+0.03,-0.012]],S));             // round collar around the opening
+ add(mergeGeos(geo),TM.lid,0,0,0,{parent:par});add(mergeGeos(bl),TM.bolt,0,0,0,{parent:par,cast:false});
+ if(!noHatch)ornCover(par,a-0.035,0.0);}
+// Ø2 m tanks (5.6 t working drawing): the flat lid with two round steps in the middle, Ø1.58 m and Ø0.96 m, 0.1 m each, and a round cast cover on top
+function tankStepLid(par,R,ns,s0,TM){tankFlatLid(par,R,ns,s0,TM,true);const S=SMALL?64:96;
+ add(mergeGeos([new THREE.CylinderGeometry(0.79,0.79,0.1,S).translate(0,0.05,0),new THREE.CylinderGeometry(0.48,0.48,0.1,S).translate(0,0.15,0)]),TM.lid,0,0,0,{parent:par});
+ ornCover(par,0.3,0.2);}
+// round cast cover (product photo): a dark disc with a raised rim and a pressed ornament on its top face
+let ORNM=null;
+function ornMats(){if(ORNM)return ORNM;
+ const c=cvs(512,512,(g,w,h)=>{const cx=w/2,cy=h/2;g.fillStyle='#202327';g.fillRect(0,0,w,h);g.strokeStyle='#474c53';g.lineCap='round';
+  g.lineWidth=14;g.beginPath();g.arc(cx,cy,236,0,TAU);g.stroke();g.lineWidth=8;g.beginPath();g.arc(cx,cy,204,0,TAU);g.stroke();g.beginPath();g.arc(cx,cy,60,0,TAU);g.stroke();
+  g.lineWidth=7;for(let k=0;k<8;k++){g.save();g.translate(cx,cy);g.rotate(k*TAU/8);g.beginPath();g.moveTo(0,-64);g.bezierCurveTo(44,-102,44,-152,0,-192);g.bezierCurveTo(-44,-152,-44,-102,0,-64);g.stroke();
+   g.beginPath();g.arc(0,-150,15,0,TAU);g.stroke();g.restore();}
+  g.fillStyle='#474c53';g.beginPath();g.arc(cx,cy,22,0,TAU);g.fill();});
+ ORNM={top:new THREE.MeshStandardMaterial({map:tex(c,1,1),roughness:0.62,metalness:0.25}),side:new THREE.MeshStandardMaterial({color:0x1d2024,roughness:0.6,metalness:0.25})};return ORNM;}
+function ornCover(par,r,y){const m=ornMats(),S=SMALL?40:64;
+ add(new THREE.CylinderGeometry(r,r,0.03,S,1,true),m.side,0,y+0.015,0,{parent:par});
+ {const d=add(new THREE.CircleGeometry(r,S),m.top,0,y+0.03,0,{parent:par});d.rotation.x=-Math.PI/2;}
+ {const t=add(new THREE.TorusGeometry(r-0.006,0.012,8,S),m.side,0,y+0.03,0,{parent:par,cast:false});t.rotation.x=Math.PI/2;}}
 // low lid of the Ø2 m tanks (5.6 t, 8.5 t photos): ns flat panels sloping up to a top plate, bolted seam flanges, a square hatch with a hinge box
 function tankConeLid(par,R,ns,s0,TM){const h=0.15,rc=0.44,Rl=R+0.012,a=0.31,geo=[],bl=[];
  let g=new THREE.LatheGeometry([new THREE.Vector2(Rl,0.0),new THREE.Vector2(rc,h),new THREE.Vector2(0.001,h)],ns,s0,TAU);g=g.toNonIndexed();g.computeVertexNormals();geo.push(tkUV(g,TAU*R,0.6));
@@ -1166,9 +1231,10 @@ function flatLid(par,LR,y0,ribs){add(new THREE.CylinderGeometry(LR,LR,0.04,72),m
 // the neck of Багц 1: 2 x Koltso 700 standing right on the tank top around the vacuum pump, and their lid (no other shaft).
 // Local y = 0 is the tank top. ENT = side the vacuum hose comes in (angle from +z toward +x).
 // The sludge pump-out pipe Ø110 rises from the tank bottom inside the rings and has TWO mouths: one straight up through the lid, one out through the side.
-function pumpNeck(par,ENT){const R7=0.35,H7=0.5,yb7=0.045;
+function pumpNeck(par,ENT){const R7=0.35,H7=0.5,yb7=0.045,n0=par.children.length;
  koltso(par,R7,H7,yb7,[0.52]);koltso(par,R7,H7,yb7+H7,[0.52]);
  const yl=yb7+2*H7;flatLid(par,R7+0.038,yl,[0.30,0.22,0.14]);
+ for(const c of par.children.slice(n0))c.traverse(m=>{m.userData.ncut=1;});   // the rings and the lid are cut open at the front (NCUT), so the pump inside shows
  // the vacuum pump on the tank top, inside the rings (stays whole when the rings are cut open)
  const PG=new THREE.Group();PG.userData.notank=1;par.add(PG);const y0=yb7;
  add(new THREE.CylinderGeometry(0.075,0.085,0.21,40),M.fitting,0,y0+0.105,0,{parent:PG});
@@ -1182,7 +1248,7 @@ function pumpNeck(par,ENT){const R7=0.35,H7=0.5,yb7=0.045;
  {const c=add(new THREE.CylinderGeometry(0.036,0.036,0.13,24),M.fitting,dir.x*0.145,yIn,dir.z*0.145,{parent:PG});c.quaternion.setFromUnitVectors(up,dir);}
  {const c=add(new THREE.CylinderGeometry(0.047,0.047,0.04,28),M.fitting,dir.x*0.2,yIn,dir.z*0.2,{parent:PG});c.quaternion.setFromUnitVectors(up,dir);}
  // rubber grommet where the hose passes the wall of the lower Koltso 700
- {const t=add(new THREE.TorusGeometry(0.066,0.014,10,32),M.rubber,dir.x*(R7+0.018),yIn,dir.z*(R7+0.018),{parent:par,cast:false});t.quaternion.setFromUnitVectors(V(0,0,1),dir);}
+ {const t=add(new THREE.TorusGeometry(0.066,0.014,10,32),M.rubber,dir.x*(R7+0.018),yIn,dir.z*(R7+0.018),{parent:par,cast:false});t.quaternion.setFromUnitVectors(V(0,0,1),dir);t.userData.ncut=1;}   // cut away with the ring wall it sits in
  // pump-out pipe: straight up from the tank top through the lid (mouth 1), a tee in the lower ring with a branch out through its side (mouth 2)
  const xs=0.24,ys=yb7+0.40,yTop=yl+0.2,mCap=stdL(0x8e1d14,{roughness:0.5});
  add(new THREE.CylinderGeometry(0.055,0.055,yTop-0.05,24),M.outPipe,xs,(yTop-0.05)/2,0,{parent:par,cast:false});
@@ -1210,12 +1276,15 @@ function sepMats(){if(SEPM)return SEPM;
   mF:mat({map:tex(speck('#d7a12b',['#e8b941','#c28c1e','#f0ca62'],900,3),3,3),roughness:0.4}),mB:mat({color:0x0d0f12,roughness:0.6})};
  return SEPM;}
 function septicTank(par,o){
- // shafts: 4 x Koltso 1000 (0.7 m each); small tanks (o.k7) carry 6 x Koltso 700 (0.5 m each) — the tank top stays below the frost depth either way
- const K7=!!o.k7,KTOP=0.04,RH=K7?0.5:0.7,NR=K7?6:4,KR1=K7?0.35:0.5,KBOT=KTOP-RH*NR;
- const RIB_H=0.16,RIB_W=0.035,SHT=0.025,NKT=0.19,NKH=K7?0.33:0.46;
+ // shaft on every neck (Plastic Center): 2 x Koltso 1000 (Ø1 x 0.7 m), a reducer plate, then 2 x Koltso 700 (Ø0.7 x 0.5 m) and the ground lid
+ const SHAFT=[[0.5,0.7,[0.35,0.67]],[0.5,0.7,[0.35,0.67]],[0.35,0.5,[0.52]],[0.35,0.5,[0.52]]],RED_T=0.035;
+ const KTOP=0.04,KR0=0.5,KR1=0.35,KBOT=KTOP-SHAFT.reduce((a,q)=>a+q[1],0)-RED_T;   // KR0: the Koltso 1000 at the bottom, KR1: the Koltso 700 at the top
+ const RIB_H=(o.R||1)<0.8?0.04:0.16,RIB_W=0.035,SHT=0.025,NKT=0.19,NKH=0.46;   // every neck takes a Koltso 1000   // the Ø1 m tanks: Ø1.08 m over the joint flanges
  const TK={R:o.R||1.0,L:o.L||2.7};TK.e=0.12*Math.min(1,TK.R);TK.cx=o.cx;TK.cy=KBOT-NKT-RIB_H-TK.R;   // tank top stays at the frost depth for every size
  const sx=clamp(TK.L/2.7,0.36,1),RR=TK.R;                         // horizontal / vertical scale against the 8.5 t CAD tank
- const RIS=(o.risers||2)===1?[TK.cx]:[TK.cx-0.26*TK.L,TK.cx+0.26*TK.L];   // risers at about a quarter and three quarters of the length (CAD)
+ // the Ø1 m septic tanks are the Ø1 m plastic tank laid on its side (product photos): 0.7 m modules; the neck sits on one module, between two joints
+ const MODN=RR<0.8?Math.max(1,Math.round(TK.L/0.7)):0,MODL=MODN?TK.L/MODN:0;
+ const RIS=(o.risers||2)===1?[MODN?clamp(TK.cx-TK.L/2+(Math.floor(MODN/2)+0.5)*MODL,TK.cx-TK.L/2+NKH+0.14,TK.cx+TK.L/2-NKH-0.14):TK.cx]:[TK.cx-0.26*TK.L,TK.cx+0.26*TK.L];   // risers at about a quarter and three quarters of the length (CAD)
  const LEVEL=TK.cy+0.66*RR,YT=TK.cy+0.71*RR,YI=TK.cy+0.74*RR,BT=TK.cy+0.24*RR;  // liquid just under the outlet, inlet 3 cm higher, baffles stop at ~60 %
  const BAF=[-0.22*TK.L,0.11*TK.L],TEXP=4.5;                        // two partial baffles -> three chambers (CAD)
  const tankR=(a,inner=0)=>{const h=TK.L/2,s=Math.abs(a);let r;if(s<=h-TK.e){r=TK.R;}else{const u=Math.min(1,(s-(h-TK.e))/TK.e);r=TK.R*Math.pow(Math.max(0,1-Math.pow(u,TEXP)),1/TEXP);}return Math.max(0,r-inner);};
@@ -1227,7 +1296,7 @@ function septicTank(par,o){
  const arcP=(r,a0,a1,n)=>{const q=[];for(let i=0;i<=n;i++){const t=a0+(a1-a0)*i/n;q.push([r*Math.cos(t),r*Math.sin(t)]);}return q;};
  const dot=(list,x,y,z,sg)=>{const g=new THREE.CircleGeometry(0.0125,6);g.rotateY(sg*Math.PI/2);list.push(placed(g,x,y,z));};
  const nearRiser=(x,w)=>RIS.some(k=>Math.abs(x-k)<w);
- {const discs=[],dots=[];const gA=Math.asin(Math.min(0.98,(NKH+0.02)/ro));
+ if(!MODN){const discs=[],dots=[];const gA=Math.asin(Math.min(0.98,(NKH+0.02)/ro));
   DISC_A.forEach(a=>{const gap=nearRiser(TK.cx+a,NKH+RIB_W/2+0.012);const sh=new THREE.Shape();
     if(gap){const P=arcP(ro,Math.PI/2+gA,Math.PI/2-gA+TAU,80).concat(arcP(ri,Math.PI/2-gA+TAU,Math.PI/2+gA,80));P.forEach((p,i)=>i?sh.lineTo(p[0],p[1]):sh.moveTo(p[0],p[1]));}
     else{const P=arcP(ro,0,TAU,104);P.pop();P.forEach((p,i)=>i?sh.lineTo(p[0],p[1]):sh.moveTo(p[0],p[1]));const hp=new THREE.Path();const H=arcP(ri,TAU,0,104);H.pop();H.forEach((p,i)=>i?hp.lineTo(p[0],p[1]):hp.moveTo(p[0],p[1]));sh.holes.push(hp);}
@@ -1235,27 +1304,51 @@ function septicTank(par,o){
     for(let k=0;k<36;k++){const t=(k+0.5)/36*TAU;if(gap&&Math.abs(Math.atan2(Math.sin(t-Math.PI/2),Math.cos(t-Math.PI/2)))<gA+0.05)continue;
       const y=TK.cy+(ro-0.04)*Math.sin(t),z=(ro-0.04)*Math.cos(t);for(const sg of [-1,1])dot(dots,TK.cx+a+sg*(RIB_W/2+0.0006),y,z,sg);}});
   add(mergeGeos(discs),M.hdpeD,0,0,0,{parent:par});add(mergeGeos(dots),mBolt,0,0,0,{cast:false,parent:par});}
- {const st=[];const rad=R+RIB_H*0.62;const AA=[-(h-0.02),...DISC_A,h-0.02];
+ if(!MODN){const st=[];const rad=R+RIB_H*0.62;const AA=[-(h-0.02),...DISC_A,h-0.02];
   for(let i=0;i<AA.length-1;i++){const a0=AA[i]+RIB_W/2,a1=AA[i+1]-RIB_W/2,ac=(a0+a1)/2,len=a1-a0;
     for(let k=0;k<12;k++){const t=(15+30*k)*Math.PI/180;const zc=rad*Math.sin(t),yc=rad*Math.cos(t);
       if(nearRiser(TK.cx+ac,NKH+len/2+0.03)&&yc>0&&Math.abs(zc)<NKH+0.07)continue;st.push(placed(new THREE.BoxGeometry(len,0.022,0.08),TK.cx+ac,TK.cy+yc,zc,t,0,0));}}
   add(mergeGeos(st),M.hdpe,0,0,0,{parent:par});}
+ else{   // Ø1 m: a double flange at every module joint, two wide flat bands per module (stopping at the side seams and under the neck), bolted seam flanges along both sides
+  const geo=[],dots=[],nuts=[],x0=TK.cx-h,FP=RIB_H,BP=0.03,BW=0.075,SW=0.06,SP=0.034,gS=(SW/2+0.012)/R,gN=Math.asin(Math.min(0.98,(NKH+0.03)/(R+FP)));
+  const arcSh=(r1,a0,a1)=>{const sh=new THREE.Shape(),P=arcP(r1,a0,a1,48).concat(arcP(R-0.01,a1,a0,48));P.forEach((p,i)=>i?sh.lineTo(p[0],p[1]):sh.moveTo(p[0],p[1]));return sh;};
+  const ringSh=r1=>{const sh=new THREE.Shape(),P=arcP(r1,0,TAU,96);P.pop();P.forEach((p,i)=>i?sh.lineTo(p[0],p[1]):sh.moveTo(p[0],p[1]));const hp=new THREE.Path(),H=arcP(R-0.01,TAU,0,96);H.pop();H.forEach((p,i)=>i?hp.lineTo(p[0],p[1]):hp.moveTo(p[0],p[1]));sh.holes.push(hp);return sh;};
+  const ext=(sh,xc,w)=>{const g=new THREE.ExtrudeGeometry(sh,{depth:w,bevelEnabled:false});g.translate(0,0,-w/2);g.rotateY(Math.PI/2);g.translate(xc,TK.cy,0);geo.push(g);};
+  const underNeck=(xc,w)=>RIS.some(k=>Math.abs(xc-k)<NKH+0.03+w/2);
+  // shape angle 0 / PI = the two side seams, PI/2 = the top (the neck)
+  const piece=(xc,w,r1,seams)=>{const nk=underNeck(xc,w),T=Math.PI/2;
+    if(!seams&&!nk){ext(ringSh(r1),xc,w);return false;}
+    const A=seams?(nk?[[gS,T-gN],[T+gN,Math.PI-gS],[Math.PI+gS,TAU-gS]]:[[gS,Math.PI-gS],[Math.PI+gS,TAU-gS]]):[[T+gN,T-gN+TAU]];
+    for(const [a0,a1] of A)ext(arcSh(r1,a0,a1),xc,w);return nk;};
+  for(let j=0;j<=MODN;j++){const end=j===0||j===MODN,w=end?0.035:0.06,xc=end?(j?x0+TK.L-0.045:x0+0.045):x0+j*MODL,nk=piece(xc,w,R+FP,false);
+    for(let i=0;i<32;i++){const t=(i+0.5)/32*TAU;if(nk&&Math.abs(t-Math.PI/2)<gN+0.06)continue;const y=TK.cy+(R+FP-0.014)*Math.sin(t),z=-(R+FP-0.014)*Math.cos(t);
+      for(const sg of end?[j?-1:1]:[-1,1])dot(dots,xc+sg*(w/2+0.0006),y,z,sg);}}
+  for(let m=0;m<MODN;m++)for(const f of [0.32,0.68])piece(x0+(m+f)*MODL,BW,R+BP,true);
+  const sl=TK.L-0.1;for(const sz of [-1,1]){const zc=sz*(R+SP/2-0.004);geo.push(placed(new THREE.BoxGeometry(sl,SW,SP),TK.cx,TK.cy,zc));
+    for(let x=x0+0.11;x<x0+TK.L-0.08;x+=0.12){nuts.push(placed(new THREE.CylinderGeometry(0.011,0.011,0.012,6),x,TK.cy+SW/2+0.006,zc),placed(new THREE.CylinderGeometry(0.0055,0.0055,0.02,6),x,TK.cy-SW/2-0.01,zc));
+      const hd=new THREE.CircleGeometry(0.0125,6);if(sz<0)hd.rotateY(Math.PI);dots.push(placed(hd,x,TK.cy,sz*(R+SP-0.0035)));}}
+  add(mergeGeos(geo),M.hdpeD,0,0,0,{parent:par});add(mergeGeos(dots),mBolt,0,0,0,{cast:false,parent:par});add(mergeGeos(nuts),mBolt,0,0,0,{cast:false,parent:par});}
  for(const sg of [-1,1]){const en=[],dots=[];const xp=TK.cx+sg*h;
    en.push(placed(new THREE.CylinderGeometry(ro,ro,0.04,96),xp-sg*0.015,TK.cy,0,0,0,Math.PI/2));
-   en.push(placed(new THREE.CylinderGeometry(0.49*RR,0.49*RR,0.012,64),xp+sg*0.011,TK.cy,0,0,0,Math.PI/2));
-   en.push(placed(new THREE.CylinderGeometry(0.42*RR,0.42*RR,0.03,64),xp+sg*0.03,TK.cy,0,0,0,Math.PI/2));
-   for(let k=0;k<4;k++){const t=Math.PI/4+k*Math.PI/2,rc=0.80*RR;en.push(placed(new THREE.BoxGeometry(0.05,0.54*RR,0.14*RR),xp+sg*0.03,TK.cy+rc*Math.cos(t),rc*Math.sin(t),t,0,0));}
+   if(RR>0.8){   // Ø2 m tanks (working drawings): a Ø1.2 m centre plate with a cross on it, four braces out to the rim; the Ø1 m tanks have a plain end plate
+     en.push(placed(new THREE.CylinderGeometry(0.6*RR,0.6*RR,0.012,64),xp+sg*0.011,TK.cy,0,0,0,Math.PI/2));
+     en.push(placed(new THREE.CylinderGeometry(0.56*RR,0.56*RR,0.03,64),xp+sg*0.03,TK.cy,0,0,0,Math.PI/2));
+     en.push(placed(new THREE.BoxGeometry(0.03,1.08*RR,0.06*RR),xp+sg*0.05,TK.cy,0),placed(new THREE.BoxGeometry(0.03,0.06*RR,1.08*RR),xp+sg*0.05,TK.cy,0));
+     for(let k=0;k<4;k++){const t=Math.PI/4+k*Math.PI/2,rc=0.79*RR;en.push(placed(new THREE.BoxGeometry(0.05,0.38*RR,0.1*RR),xp+sg*0.03,TK.cy+rc*Math.cos(t),rc*Math.sin(t),t,0,0));}}
    for(let k=0;k<40;k++){const t=(k+0.5)/40*TAU;dot(dots,xp+sg*0.0066,TK.cy+(ro-0.045)*Math.sin(t),(ro-0.045)*Math.cos(t),sg);}
    add(mergeGeos(en),M.hdpeD,0,0,0,{parent:par});add(mergeGeos(dots),mBolt,0,0,0,{cast:false,parent:par});
    {const q=add(new THREE.TorusGeometry(0.075,0.016,10,36),M.hdpeD,xp+sg*0.012,sg>0?YT:YI,0,{cast:false,parent:par});q.rotation.y=Math.PI/2;}
-   if(sg>0){const lb=add(new THREE.PlaneGeometry(0.62*RR,0.31*RR),M.pc,xp+0.047,TK.cy-0.12*RR,0,{parent:par,cast:false});lb.rotation.y=Math.PI/2;}}
- // two square risers with flanges, each carrying a shaft of 4 x Koltso 1000 and a ground-level lid
+   if(sg>0){const big=RR>0.8,lb=add(new THREE.PlaneGeometry(big?0.32*RR:0.62*RR,big?0.16*RR:0.31*RR),M.pc,xp+0.047,TK.cy-(big?0.8:0.12)*RR,0,{parent:par,cast:false});lb.rotation.y=Math.PI/2;}}
+ // square risers with flanges, each carrying the shaft (2 x Koltso 1000, reducer, 2 x Koltso 700) and a ground-level lid
  {const sq=(a,b)=>{const s=new THREE.Shape();s.moveTo(-a,-a);s.lineTo(a,-a);s.lineTo(a,a);s.lineTo(-a,a);s.lineTo(-a,-a);const p=new THREE.Path();p.moveTo(-b,-b);p.lineTo(-b,b);p.lineTo(b,b);p.lineTo(b,-b);p.lineTo(-b,-b);s.holes.push(p);return s;};
   const y0=TK.cy+R-0.32,yf=KBOT-0.03;const gs=[];
   for(const KX of RIS){const ng=new THREE.ExtrudeGeometry(sq(NKH,NKH-0.07),{depth:yf-y0,bevelEnabled:false});ng.rotateX(-Math.PI/2);ng.translate(KX,y0,0);
     const fg=new THREE.ExtrudeGeometry(sq(NKH+0.08,NKH-0.1),{depth:0.03,bevelEnabled:false});fg.rotateX(-Math.PI/2);fg.translate(KX,yf,0);gs.push(ng,fg);}
   add(mergeGeos(gs),M.hdpeD,0,0,0,{parent:par});}
- if(!o.bare)RIS.forEach((KX,i)=>{const RG=new THREE.Group();RG.position.x=KX;par.add(RG);for(let k=0;k<NR;k++)koltso(RG,KR1,RH,KBOT+k*RH,K7?[0.52]:[0.35,0.67]);ringLid(RG,KR1+0.05,KTOP);if(i===0)pcLabel(RG,KR1+0.036,KTOP-0.36,0.24,0.5);});
+ if(!o.bare)RIS.forEach((KX,i)=>{const RG=new THREE.Group();RG.position.x=KX;par.add(RG);let y=KBOT;
+  for(let k=0;k<SHAFT.length;k++){const [r,hh,b]=SHAFT[k];if(k===2){add(lathe([[KR1-0.04,0],[KR0+0.07,0],[KR0+0.07,RED_T],[KR1-0.04,RED_T]],SMALL?64:96),mK7L,0,y,0,{parent:RG});y+=RED_T;}   // reducer plate: Koltso 1000 -> Koltso 700
+   koltso(RG,r,hh,y,b);y+=hh;}
+  ringLid(RG,KR1+0.05,KTOP);if(i===0)pcLabel(RG,KR1+0.036,KTOP-0.36,0.24,0.5);});
  // inlet: through the left end plate, elbow down into chamber 1 (dip pipe ends in the water, above the sludge)
  {const xi=TK.cx-h+0.2*sx,c=new THREE.CurvePath();c.add(new THREE.LineCurve3(V(TK.cx-h-0.08,YI,0),V(xi-0.11,YI,0)));c.add(new THREE.QuadraticBezierCurve3(V(xi-0.11,YI,0),V(xi,YI,0),V(xi,YI-0.11,0)));c.add(new THREE.LineCurve3(V(xi,YI-0.11,0),V(xi,TK.cy-0.05,0)));
   add(new THREE.TubeGeometry(c,60,0.055,16,false),M.pvc,0,0,0,{parent:par,cast:false});}
@@ -1287,7 +1380,7 @@ function septicTank(par,o){
  // anchors for the words written on the cut (like the infographic: ТОС, Саарал ус, Лаг)
  const yb0=TK.cy-TK.R;
  const words=[['ТОС',TK.cx+0.12*sx,LEVEL-0.028*RR,'s'],['Саарал ус',TK.cx-0.2*sx,TK.cy+0.36*RR,''],['Лаг',TK.cx-0.37*TK.L,yb0+0.3*RR,''],['Лаг',TK.cx-0.06*TK.L,yb0+0.16*RR,'']];
- return {TK,KBOT,KTOP,YT,YI,LEVEL,RIS,KR1,NKH,RIB_H,words,flow:FLW,sx,xi:TK.cx-h+0.2*sx,xo:TK.cx+h-0.24*sx};}
+ return {TK,KBOT,KTOP,YT,YI,LEVEL,RIS,KR0,KR1,NKH,RIB_H,words,flow:FLW,sx,xi:TK.cx-h+0.2*sx,xo:TK.cx+h-0.24*sx};}
 
 // ===================== GER (reference model: weathered off-white felt with a bulging wall, three strap ropes with tie tabs, shallow roof with a
 // meander band at the eave, crown, rusty stove pipe, painted orange door with a blue felt border, two door poles and a plank step) =====================
@@ -1515,13 +1608,14 @@ function wallPanel(G,axis,f,dir,u0,u1,y0,y1,mat,th=0.012){if(axis==='x'){const x
 // ---------- Багц 1: one-storey house (байшин) with a coal stove and a bathroom with the vacuum toilet ----------
 function houseP1(G){const c={x0:-7.8,x1:-1.6,z0:-4.8,z1:1.2,T:0.3,FY:0.35,floors:[2.75],pitch:28*Math.PI/180,ov:0.42,fd:1.2,
   paint:paint(0xefe0bb),plinth:std(0x7a3a2a,{roughness:0.85}),roof:new THREE.MeshStandardMaterial({map:tex(roofHC,1,1),color:lin(0x3e8a57),metalness:0.45,roughness:0.42}),ridge:std(0x2f6e45,{metalness:0.4,roughness:0.4})};
- const S=houseShell(G,c),FY=c.FY,TOP=S.TOP;
+ const n0=G.children.length,S=houseShell(G,c),FY=c.FY,TOP=S.TOP;
  // partitions: bathroom (front right), hall (back right), living room (left)
  const XP0=-4.05,XP1=-3.93,ZB0=-2.47,ZB1=-2.35;
  hbox(G,XP0,XP1,FY,TOP-0.2,ZB0,c.z1-c.T,H.plaster,H.secWall);
  hbox(G,XP0,c.x1-c.T,FY,TOP-0.2,ZB0,ZB1,H.plaster,null);
  // bathroom finishes: tiled walls and floor
  wallPanel(G,'x',XP1,1,ZB1,c.z1-c.T,FY,TOP-0.2,H.tiles);wallPanel(G,'x',c.x1-c.T,-1,ZB1,c.z1-c.T,FY,TOP-0.2,H.tiles);wallPanel(G,'z',ZB1,1,XP1,c.x1-c.T,FY,TOP-0.2,H.tiles);
+ const nW=G.children.length;
  hbox(G,XP1,c.x1-c.T,FY,FY+0.012,ZB1,c.z1-c.T,H.tilesB,H.tilesB,{cast:false});
  vanity(G,-3.45,FY+0.012,ZB1+0.26,0);
  add(new THREE.BoxGeometry(0.05,0.5,0.32),std(0x3f8fc9,{roughness:0.9}),XP1+0.04,FY+1.2,-1.4,{parent:G});
@@ -1537,6 +1631,7 @@ function houseP1(G){const c={x0:-7.8,x1:-1.6,z0:-4.8,z1:1.2,T:0.3,FY:0.35,floors
   add(new THREE.BoxGeometry(0.45,0.55,1.4),std(0x7a5232,{roughness:0.6}),XP0-0.25,FY+0.275,-1.2,{parent:G});add(new THREE.BoxGeometry(0.06,0.55,0.95),M.dark,XP0-0.3,FY+0.85,-1.2,{parent:G});
   add(new THREE.BoxGeometry(0.03,0.7,0.5),std(0x6b4a2c),-7.48,FY+1.7,-2.9,{parent:G,cast:false});}
  // openings
+ const nO=G.children.length;
  opening(G,'x',c.x1,1,-1.75,-1.1,FY+1.65,FY+2.2);opening(G,'x',c.x1-c.T,-1,-1.75,-1.1,FY+1.65,FY+2.2,{inside:1});
  opening(G,'x',c.x1,1,-4.15,-3.25,FY,FY+2.15,{door:1});
  opening(G,'x',c.x0,-1,-3.2,-1.9,FY+0.9,FY+2.2);opening(G,'x',c.x0+c.T,1,-3.2,-1.9,FY+0.9,FY+2.2,{inside:1});
@@ -1545,6 +1640,8 @@ function houseP1(G){const c={x0:-7.8,x1:-1.6,z0:-4.8,z1:1.2,T:0.3,FY:0.35,floors
  // porch: steps + canopy at the door
  hbox(G,c.x1,c.x1+0.62,0,FY,-4.35,-3.05,H.conc,H.conc);hbox(G,c.x1+0.62,c.x1+0.92,0,FY/2,-4.35,-3.05,H.conc,H.conc);
  {const cp=add(new THREE.BoxGeometry(0.95,0.05,1.5),[H.secRoof,H.secRoof,c.roof,H.soffit,H.secRoof,H.secRoof],c.x1+0.45,FY+2.45,-3.7,{parent:G});cp.rotation.z=-0.22;}
+ // walls, roof, partitions, openings and porch fade when the camera comes close to the toilet (the floor slab and foundation stay)
+ {const bb=new THREE.Box3();for(const [a,b] of [[n0,nW],[nO,G.children.length]])for(const ch of G.children.slice(a,b)){bb.setFromObject(ch);if(bb.max.y>FY+0.005)ch.traverse(m=>{if(m.isMesh)m.userData.hfade=1;});}}
  point(G,-5.6,2.4,-1.6,0xffe9c8,0.55,7);point(G,-2.9,2.5,-0.9,0xf1f6ff,0.45,4.5);
  return {toilet:T,S,c};}
 
@@ -1599,15 +1696,16 @@ function houseP3(G){const c={x0:-8.5,x1:-1.6,z0:-6.0,z1:1.4,T:0.3,FY:0.45,floors
 const PK=[null];
 // Plastic Center's vertical plastic tanks (2026 price list + product photos): capacity (t), diameter × height (m), weight (kg); built from ring modules
 //   Ø1 m: 0.7 m modules with 2 bands, 4 seams · Ø1.5 m: 0.9 m modules with 3 bands, 4 seams · Ø2 m: 0.9 m modules with 3 bands, 8 seams
-//   lid (shown in the 3D viewer): flat with a hatch on Ø1 m, a low cone up to an octagonal hatch on the others, a steep cone on the 5.6 t
+//   lid (shown in the 3D viewer): flat with a round opening and a round cast cover on Ø1 / Ø1.5 m (product photo);
+//   on Ø2 m the flat lid with two round steps (5.6 t working drawing)
 // tank line-up from the product photos: Ø1 m tanks are rings of 4 panels, 0.7 m tall, 2 bands each; Ø1.5 m — 5 panels, 0.9 m, 3 bands;
 // Ø2 m — 7 panels, 0.9 m, 3 bands; heights and weights from the 2026 price list (1.6 t = 3 x 0.7 m = 2.1 m, 5 t = 3 x 0.9 m = 2.7 m,
 // confirmed by Plastic Center over the photos' 2.2 m / 2.8 m); s0 turns a seam where the photo shows one
 const LK=(ns,nb,bh,s0)=>({ns,nb,bh,s0});
 const TANKS=[{t:'1.1',D:'1',Hm:'1.4',kg:188,R:0.5,n:2,MH:0.7,look:LK(4,2,0.062,Math.PI/4),lid:'flat'},{t:'1.6',D:'1',Hm:'2.1',kg:252,R:0.5,n:3,MH:0.7,look:LK(4,2,0.062,0),lid:'flat'},
   {t:'2.2',D:'1',Hm:'2.8',kg:316,R:0.5,n:4,MH:0.7,look:LK(4,2,0.062,0),lid:'flat'},{t:'3',D:'1.5',Hm:'1.8',kg:440,R:0.75,n:2,MH:0.9,look:LK(5,3,0.074,0),lid:'flat'},
-  {t:'5',D:'1.5',Hm:'2.7',kg:596,R:0.75,n:3,MH:0.9,look:LK(5,3,0.074,0),lid:'flat'},{t:'5.6',D:'2',Hm:'1.8',kg:686,R:1.0,n:2,MH:0.9,look:LK(7,3,0.074,0.276),lid:'cone'},
-  {t:'6.5',D:'1.5',Hm:'3.6',kg:752,R:0.75,n:4,MH:0.9,look:LK(5,3,0.074,0),lid:'flat'},{t:'8.5',D:'2',Hm:'2.7',kg:894,R:1.0,n:3,MH:0.9,look:LK(7,3,0.074,Math.PI/7),lid:'cone'}];
+  {t:'5',D:'1.5',Hm:'2.7',kg:596,R:0.75,n:3,MH:0.9,look:LK(5,3,0.074,0),lid:'flat'},{t:'5.6',D:'2',Hm:'1.8',kg:686,R:1.0,n:2,MH:0.9,look:LK(7,3,0.074,0.276),lid:'step'},
+  {t:'6.5',D:'1.5',Hm:'3.6',kg:752,R:0.75,n:4,MH:0.9,look:LK(5,3,0.074,0),lid:'flat'},{t:'8.5',D:'2',Hm:'2.7',kg:894,R:1.0,n:3,MH:0.9,look:LK(7,3,0.074,Math.PI/7),lid:'step'}];
 const tankDims=s=>`Ø${s.D} × ${s.Hm} м · ${s.kg} кг`;
 // pump-outs a year for a 4-person household with the vacuum toilet, as printed on Plastic Center's price list (the price card shows the same column)
 const PUMP4={'1.1':5,'1.6':3.4,'2.2':2.6,'3':1.8,'5':1.1,'5.6':1,'6.5':0.8,'8.5':0.6};
@@ -1629,7 +1727,7 @@ function attached(o){while(o.parent)o=o.parent;return o===scene;}
  // Pump-out: the price list's count for 4 people, scaled to the household this size suits (so the sheet and the price card agree).
  const PPL1=[2,3,4,4,6,6,7,8],SIZES=TANKS.map((s,j)=>Object.assign({},s,{ppl:PPL1[j]}));
  for(const s of SIZES){const yr=PUMP4[s.t]*s.ppl/4;s.yr=(Math.round(yr*10)/10).toFixed(1);s.mo=Math.round(12/yr);s.per=`≈ ${s.mo} сар тутам`;}
- const TG=new THREE.Group();TG.position.set(cx,YT,cz);G.add(TG);
+ const TG=new THREE.Group();TG.position.set(cx,YT,cz);G.add(TG);NCUT.constant=cz;HF.toilet=h.toilet;
  const TB=new THREE.Group();TB.userData.tank=1;TG.add(TB);            // the tank body (rebuilt when the size changes)
  const RG=new THREE.Group();RG.userData.tank=1;TG.add(RG);            // 2 x Koltso 700, pump, pump-out pipe, lid (fixed)
  const nk=pumpNeck(RG,ENT);
@@ -1666,20 +1764,19 @@ function attached(o){while(o.parent)o=o.parent;return o===scene;}
  const tankP=(i,p)=>{const s=SIZES[i],H=s.n*s.MH;return (p||V(0,0,0)).set(cx+s.R*0.62,YT-H*0.5,cz+s.R*0.8);};
  const tLbl=LB(tankT(3),tankS(3),tankP(3),{cut:1,tank:1});
  PK[k]={k,G,tankZ:cz,tankR:SIZES[3].R+0.06,pops:[],dyn:[TB,SG,HG,RG],
-  prods:()=>[{id:'toilet',box:toiletBox},{id:'k700',box:neckBox},{id:'tank',box:new THREE.Box3().setFromObject(TB).expandByScalar(0.06)}],
-  v3d:[['toilet','Суултуур'],['toilet@inside','Суултуурын дотор тал'],['tank','Пластик танк'],['k700','Кольцо 700']],
+  prods:()=>[{id:'toilet',box:toiletBox},{id:'pump@inside',box:neckBox},{id:'tank',box:new THREE.Box3().setFromObject(TB).expandByScalar(0.06)}],
+  v3d:[['toilet','Суултуур'],['toilet@inside','Суултуурын дотор тал'],['pump@inside','Вакуум насос'],['tank','Пластик танк'],['k700','Кольцо 700']],
   tank:{SIZES,TB,hit:[TB,RG],get i(){return S1.i;},T:tankT,S:tankS,base:V(0,0,0),pivot(){const s=SIZES[S1.i];return V(0,-s.n*s.MH/2,0);},
    spec:i=>{const s=SIZES[i];return `<b>${s.t} тн танк · ${tankDims(s)}</b><br>${s.ppl} ам бүл: жилд ≈ ${s.yr} удаа (${s.per}) соруулна`;},
    toast:i=>{const s=SIZES[i];return `<b>Танк ${s.t} тн · Ø${s.D} × ${s.Hm} м</b><span>${s.ppl} хүн хэрэглэнэ · ${s.per} соруулна</span>`;},
    set(i){buildSize(i);pruneDetached();for(const g of [TB,SG,HG])clipify(g,1,true);PK[1].tankR=SIZES[i].R+0.06;tankP(i,tLbl.p);boxes1(i);}},
   labels:[LB('Вакуум суултуур','Халдаг, өвлийн горимтой',V(tw.x,tw.y+0.47,tw.z+0.05),{key:1,cut:1,prod:'toilet',upN:-58}),LB('Дулаалгатай хоолой · 5 м','Хамгаалалтын хоолой дотор, 0.9 м гүнд',V(-0.95,YH,0.04),{cut:1}),
-   LB('Вакуум насос','2 ш Кольцо 700 дотор',V(cx-0.06,YT+nk.top+0.05,cz),{narrowHide:1}),LB('Соруулах хоолой','2 амтай: дээр ба хажууд',V(cx+nk.xs,YT+nk.yTop+0.04,cz),{narrowHide:1}),
+   LB('Вакуум насос','2 ш Кольцо 700 дотор',V(cx-0.06,YT+nk.top+0.05,cz),{narrowHide:1,prod:'pump@inside'}),LB('Соруулах хоолой','2 амтай: дээр ба хажууд',V(cx+nk.xs,YT+nk.yTop+0.04,cz),{narrowHide:1}),
    tLbl],
-  all:null,yard:null,near:null,nearAng:[0.34,1.2]};
+  all:null,yard:null};
  // views follow the tank: deep tanks pull the camera down and out
  function boxes1(i){const s=SIZES[i],yb=Math.min(-2.6,YT-s.n*s.MH-0.45),P=PK[1];
-   P.all=new THREE.Box3(V(-8.4,Math.min(-2.8,yb),-6.0),V(7.6,5.0,0.4));P.yard=new THREE.Box3(V(X0,Math.min(-2.8,yb),ZBK),V(X1,5.0,0.4));
-   P.near=new THREE.Box3(V(-3.4,yb,-2.3),V(cx+s.R+0.95,1.5,0.3));}
+   P.all=new THREE.Box3(V(-8.4,Math.min(-2.8,yb),-6.0),V(7.6,5.0,0.4));P.yard=new THREE.Box3(V(X0,Math.min(-2.8,yb),ZBK),V(X1,5.0,0.4));}
  boxes1(3);}
 
 // ---------- Багц 2: round cabin + plastic tank (ger, lattice tank under the cabin); the price list offers it with the 1.1 – 5 t tanks — tap it ----------
@@ -1712,10 +1809,9 @@ function attached(o){while(o.parent)o=o.parent;return o===scene;}
    toast:i=>{const s=SIZES[i];return `<b>Танк ${s.t} тн · Ø${s.D} × ${s.Hm} м</b><span>${s.ppl} хүн хэрэглэнэ · ${s.per} соруулна</span>`;},
    set(i){buildSize(i);pruneDetached();for(const g of [TB,SG])clipify(g,2,true);PK[2].tankR=SIZES[i].R+0.06;tankP(i,tLbl.p);boxes2(i);}},
   labels:[LB('Дугуй кабин','Ганган цагаан',V(cx,2.1,cz),{key:1,prod:'cabin'}),tLbl,LB('Гэр','',V(-4.6,2.75,-3.6),{narrowHide:1})],
-  all:null,yard:null,near:null,nearAng:[0.3,1.25]};
+  all:null,yard:null};
  function boxes2(i){const s=SIZES[i],yb=Math.min(-2.45,-s.n*s.MH-0.45),P=PK[2];
-   P.all=new THREE.Box3(V(-7.6,Math.min(-1.8,yb),-6.6),V(7.6,3.4,0.4));P.yard=new THREE.Box3(V(X0,Math.min(-2.4,yb),ZBK),V(X1,4.2,0.4));
-   P.near=new THREE.Box3(V(1.0,yb,-2.4),V(5.0,2.6,0.3));}
+   P.all=new THREE.Box3(V(-7.6,Math.min(-1.8,yb),-6.6),V(7.6,3.4,0.4));P.yard=new THREE.Box3(V(X0,Math.min(-2.4,yb),ZBK),V(X1,4.2,0.4));}
  boxes2(3);}
 
 // ===================== FLOW: animated arrows on the pipes and particles in the water (Багц 3: how the sewage moves and gets clean) =====================
@@ -1748,11 +1844,14 @@ function pruneDetached(){for(let j=FLOWS.length-1;j>=0;j--)if(FLOWS[j].m&&!attac
 // ---------- Багц 3: septic tank + installation (two-storey house, septic shown cut open, soak-away field, installer); the septic comes in 9 sizes — tap it ----------
 {const k=3,G=newPkg(k);const h=houseP3(G);
  const cz=-(1.0+0.16+0.15),PD3=2*(1.16+0.15);
- // capacity (t), radius, length (π R² L = capacity), risers. People: the household use printed on Plastic Center's price list.
- // Only the sludge is pumped out: about once a year with year-round use, every 2 years at a summer house.
- const SIZES=[{t:'1.1',R:0.6,L:0.97,nr:1,k7:1},{t:'1.6',R:0.65,L:1.21,nr:1,k7:1},{t:'2.2',R:0.7,L:1.43,nr:1,k7:1},{t:'5.6',R:0.9,L:2.2,nr:1},
-   {t:'8.5',R:1.0,L:2.7,nr:1},{t:'11.2',R:1.0,L:3.57,nr:2},{t:'14',R:1.0,L:4.46,nr:2},{t:'17',R:1.0,L:5.41,nr:2},{t:'20',R:1.0,L:6.37,nr:2}];
- const PPL3=['2–3','4–5','6–9','18–23','26–35','37–46','47–55','55–80','70–150'];SIZES.forEach((s,j)=>{s.ppl=PPL3[j];});
+ // capacity (t), inner radius, length and risers from Plastic Center's working drawings (Ø1 m inside / Ø1.08 m over the flanges,
+ // Ø2 m inside / Ø2.22 m over the flanges, π R² L = capacity; the 2.2 t has no drawing, its length follows from that formula).
+ // People and litres a day from the product posters; the 14 t has no poster and keeps the earlier price-list figure.
+ const SIZES=[{t:'1.1',R:0.5,L:1.44,nr:1,k7:1},{t:'1.6',R:0.5,L:2.14,nr:1,k7:1},{t:'2.2',R:0.5,L:2.8,nr:1,k7:1},{t:'5.6',R:1.0,L:1.84,nr:1,kg:920},
+   {t:'8.5',R:1.0,L:2.74,nr:2,kg:1314},{t:'11.2',R:1.0,L:3.64,nr:2,kg:1590},{t:'14',R:1.0,L:4.54,nr:2,kg:1867},{t:'17',R:1.0,L:5.44,nr:2,kg:2234},{t:'20',R:1.0,L:6.34,nr:2,kg:2511}];
+ const PPL3=['2–3','4–5','6–7','8–15','16–23','24–30','47–55','100–140','150+'],LPD3=['300–350','450–500','650–750','1,500','2,800','3,700','','5,600','6,600'];
+ SIZES.forEach((s,j)=>{s.ppl=PPL3[j];s.lpd=LPD3[j];s.od=s.R<0.8?'1.08':'2.22';});
+ const use3=s=>`${s.ppl} хүнд`+(s.lpd?` · ${s.lpd} л/хоног`:'');
  const D=new THREE.Group();D.name='sep';G.add(D);
  const S3={i:4,TG:null,A:null};
  const gravC=cvs(512,300,(g,w,hh)=>{g.fillStyle='#6f6b64';g.fillRect(0,0,w,hh);let sd=11;const rn=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};for(let i=0;i<520;i++){const x=rn()*w,y=rn()*hh,r=5+rn()*8,v=70+rn()*95|0;g.fillStyle=`rgb(${v},${v-3},${v-8})`;g.strokeStyle='rgba(30,26,22,.75)';g.lineWidth=1.6;g.beginPath();g.ellipse(x,y,r*1.15,r*0.9,rn()*3,0,7);g.fill();g.stroke();}});
@@ -1802,7 +1901,7 @@ function pruneDetached(){for(let j=FLOWS.length-1;j>=0;j--)if(FLOWS[j].m&&!attac
     flowDots(D,SMALL?20:30,(j,t,c)=>{const T=2.1,u=fract(t/T+hashf(j)),x=XJ+0.14+hashf(j+7)*(xb-XJ-0.18),y=lerp(YG-0.07,GY0-0.13,u*u*(1.6-0.6*u));
      c.copy(FLOWCOL.drop);return [x+Math.sin(u*6+j)*0.02,y,0.04,0.024*Math.min(1,u/0.08,(1-u)/0.25)];});}
    // pit: the shafts open to the ground, a drop pit beside the left end plate, the tank bay; a soil wall stays between two shafts that are far enough apart
-   const sw=st.KR1+0.1,RS=st.RIS,tx0=xd-0.22,tx1=xR+0.5,ty0=TK.cy-(RR+0.16)-0.2,ty1=TK.cy+RR+0.16+0.09,r=0.3,dTop=-0.68,LS=RS[0]-sw,RSx=RS[RS.length-1]+sw;
+   const sw=st.KR0+0.1,RS=st.RIS,tx0=xd-0.22,tx1=xR+0.5,ty0=TK.cy-(RR+0.16)-0.2,ty1=TK.cy+RR+0.16+0.09,r=0.3,dTop=-0.68,LS=RS[0]-sw,RSx=RS[RS.length-1]+sw;
    const notch=[[LS,0],[LS,dTop],[tx0,dTop]];for(let j=0;j<=6;j++){const a=Math.PI+j/6*Math.PI/2;notch.push([tx0+r+r*Math.cos(a),ty0+r+r*Math.sin(a)]);}
    for(let j=0;j<=6;j++){const a=1.5*Math.PI+j/6*Math.PI/2;notch.push([tx1-r+r*Math.cos(a),ty0+r+r*Math.sin(a)]);}notch.push([tx1,ty1],[RSx,ty1],[RSx,0]);
    const walls=(RS.length>1&&RS[1]-RS[0]>2*sw+0.1)?[[[RS[0]+sw,0],[RS[0]+sw,ty1],[RS[1]-sw,ty1],[RS[1]-sw,0]]]:[];
@@ -1819,28 +1918,27 @@ function pruneDetached(){for(let j=FLOWS.length-1;j>=0;j--)if(FLOWS[j].m&&!attac
  // installation crew next to the shafts
  const W1=new THREE.Group();{W1.position.set(5.75,0,-2.2);W1.rotation.y=-0.5;G.add(W1);buildWorker(W1);dirtPile(G,6.6,-2.85,0.8,0.5);wheelbarrow(G,7.3,-1.7,-0.6);}
  {const c=[];tileLine(c,-0.6,-6.24,-0.6,-4.7,2);tilePath(G,c);}
- const T3=i=>`Септик танк · ${SIZES[i].t} тн`,S3s=i=>`${SIZES[i].ppl} хүнд · 2–3 жилд 1 удаа соруулна`;
+ const T3=i=>`Септик танк · ${SIZES[i].t} тн`,S3s=i=>use3(SIZES[i]);
  const tLbl=LB(T3(4),S3s(4),V(0,0,0),{key:1,cut:1,tank:1}),fLbl=LB('Шингээх талбай','Цэвэршсэн ус хөрсөнд',V(0,0,0),{cut:1});
  const wLbls=S3.A.st.words.map(([t,x,y,s])=>LB(t,'',V(x,y,cz),{inline:1,small:s==='s'}));
  PK[k]={k,G,tankZ:cz,tankR:1.2,pops:[{o:W1,x:5.75}],dyn:[D],
-  prods:()=>{const A=S3.A,TK=A.TK,st=A.st,R1=st.KR1+0.12,id=SIZES[S3.i].k7?'k700':'k1000';
-   const L=st.RIS.map(x=>({id,box:new THREE.Box3(V(x-R1,st.KBOT-0.02,cz-R1),V(x+R1,st.KTOP+0.12,cz+R1))}));
+  prods:()=>{const A=S3.A,TK=A.TK,st=A.st,R0=st.KR0+0.12,R1=st.KR1+0.12,yS=st.KBOT+1.4;   // the lower part of a shaft opens Koltso 1000, the upper part Koltso 700
+   const L=st.RIS.flatMap(x=>[{id:'k1000',box:new THREE.Box3(V(x-R0,st.KBOT-0.02,cz-R0),V(x+R0,yS,cz+R0))},{id:'k700',box:new THREE.Box3(V(x-R1,yS,cz-R1),V(x+R1,st.KTOP+0.12,cz+R1))}]);
    L.push({id:'septic',box:new THREE.Box3(V(TK.cx-TK.L/2-0.3,TK.cy-TK.R-0.3,cz-TK.R-0.3),V(TK.cx+TK.L/2+0.3,st.KBOT-0.02,cz+TK.R+0.3))});return L;},
-  v3d:[['septic','Септик танк'],['kolt3','Кольцо']],
+  v3d:[['septic','Септик танк'],['k1000','Кольцо 1000'],['k700','Кольцо 700']],
   tank:{SIZES,get TB(){return S3.TG;},get hit(){return [S3.TG];},get i(){return S3.i;},T:T3,S:S3s,base:V(0,0,cz),pivot(){const T=S3.A.TK;return V(T.cx,T.cy,0);},
-   note:'Бүх хэмжээ: 1.1 – 20 тн · 2 – 150 хүнд',
-   spec:i=>`Хэрэглээ: ${SIZES[i].ppl} хүн. Лагийг 2–3 жилд 1 удаа соруулна.`,
-   toast:i=>`<b>Септик ${SIZES[i].t} тн</b><span>${SIZES[i].ppl} хүнд · 2–3 жилд 1 удаа соруулна</span>`,
+   note:'Бүх хэмжээ: 1.1 – 20 тн · 2 – 150+ хүнд',
+   spec:i=>{const s=SIZES[i];return `Ø${s.od} × ${s.L} м${s.kg?` · ${s.kg} кг`:''}. Хэрэглээ: ${use3(s)}. Лагийг 2–3 жилд 1 удаа соруулна.`;},
+   toast:i=>`<b>Септик ${SIZES[i].t} тн</b><span>${use3(SIZES[i])}</span>`,
    set(i){build(i,false);}},
   postBatch(){batchStatic(D,new Set([S3.TG]));batchStatic(S3.TG,null);},
   labels:[tLbl,LB('Бохир хоолой','Байшингаас танк руу',V(0.0,-0.67,0.06),{cut:1,narrowHide:1}),fLbl,
    LB('Суурилуулалт','Бид суулгаж өгнө',V(5.75,1.95,-2.2)),LB('Хөлдөлтийн гүн ≈ 3 м','Танк түүнээс доор',V(-5.6,-3.0,0.02),{cut:1,narrowHide:1}),...wLbls],
-  all:new THREE.Box3(V(-9.0,-5.5,-6.6),V(8.0,8.9,0.4)),yard:new THREE.Box3(V(X0,-5.4,ZBK),V(X1,8.8,0.4)),nearAng:[0.16,1.4]};
- // label spots, the camera's close-up box and the span of the cut-open words follow the tank size
+  all:new THREE.Box3(V(-9.0,-5.5,-6.6),V(8.0,8.9,0.4)),yard:new THREE.Box3(V(X0,-5.4,ZBK),V(X1,8.8,0.4))};
+ // label spots and the span of the cut-open words follow the tank size
  function place(){const A=S3.A,TK=A.TK;tLbl.p.set(TK.cx+0.426*TK.L,TK.cy+0.92*TK.R,cz);fLbl.p.set((A.GX0+A.GX1)/2,A.GY1,0.02);
    A.st.words.forEach((w,j)=>{if(wLbls[j])wLbls[j].p.set(w[1],w[2],cz);});
-   const P=PK[3],yb=Math.min(TK.cy-TK.R-0.16,A.GY0)-0.1;P.wordSpan=[TK.cx-TK.L/2,TK.cx+TK.L/2,TK.cy,cz];
-   P.near=new THREE.Box3(V(A.xd-0.45,yb,-2.6),V(A.GX1+0.1,-1.7,0.2));P.nearNarrow=new THREE.Box3(V(A.xd-0.2,yb+0.1,-2.6),V(A.xR+1.1,-2.75,0.2));}
+   PK[3].wordSpan=[TK.cx-TK.L/2,TK.cx+TK.L/2,TK.cy,cz];}
  place();}
 DEF=scene;BUILDPK=0;
 
@@ -1856,11 +1954,15 @@ const CLIPC={};
 function clipify(root,k,fresh){const cache=fresh?new Map():(CLIPC[k]||(CLIPC[k]=new Map()));
  if(fresh)for(let j=INSIDE.length-1;j>=0;j--)if(!INSIDE[j].m.parent)INSIDE.splice(j,1);
  root.traverse(m=>{if(!(m.isMesh||m.isInstancedMesh))return;
-   const cat=m.userData.cat==='front'?'f':(inTank(m)?'t':'d');const planes=cat==='f'?[CUT,SW[k]]:(cat==='t'?[SW[k],TC[k]]:[SW[k]]);
+   const cat=m.userData.cat==='front'?'f':(m.userData.ncut?'n':(inTank(m)?'t':'d'));const planes=cat==='f'?[CUT,SW[k]]:(cat==='n'?[SW[k],NCUT]:(cat==='t'?[SW[k],TC[k]]:[SW[k]]));
    const conv=mat=>{const key=mat.uuid+cat;let c=cache.get(key);if(!c){c=mat.clone();c.clippingPlanes=planes;c.clipShadows=true;if(fresh)c.userData.dyn=1;cache.set(key,c);}return c;};
    m.material=Array.isArray(m.material)?m.material.map(conv):conv(m.material);
    if(m.userData.inside){INSIDE.push({m,k});m.visible=false;}});}
 for(let k=1;k<=3;k++)clipify(PK[k].G,k,false);
+// Багц 1 house: its own copies of the materials of the marked parts (the clipping planes stay shared, they move every frame)
+{const cache=new Map();HF.toilet.getWorldPosition(HF.pos);HF.pos.y+=0.4;
+ PK[1].G.traverse(m=>{if(!m.isMesh||!m.userData.hfade)return;const conv=x=>{let c=cache.get(x.uuid);if(!c){c=x.clone();c.clippingPlanes=x.clippingPlanes;c.userData.base=x.opacity;c.userData.baseT=x.transparent;c.userData.baseDW=x.depthWrite;cache.set(x.uuid,c);HF.mats.push(c);}return c;};
+  m.material=Array.isArray(m.material)?m.material.map(conv):conv(m.material);});}
 // ---------- static batching: meshes that never move are merged per material (multi-material boxes are split by group first), so phones issue far fewer draw calls ----------
 function batchStatic(root,skip){root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(root.matrixWorld).invert(),B=new Map(),m4=new THREE.Matrix4(),NI=new Map(),done=new Set();
  const mats=o=>Array.isArray(o.material)?o.material:[o.material];
@@ -1914,29 +2016,31 @@ const O={tgt:V(0,0.5,-3),r:28,th:0.42,ph:1.14,dt:V(0,0.5,-3),dr:28,dth:0.42,dph:
 const HOMEA=[0.42,1.14];
 function resize(){const w=Math.max(10,stage.clientWidth),h=Math.max(10,stage.clientHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,COARSE?(SMALL?1.5:1.6):2));renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
 new ResizeObserver(()=>{resize();if(ST&&ST.autoFrame)reframe(true);}).observe(stage);
-function padTop(){const t=$('tools'),b=$('brand');let y=0;for(const el of [t,b]){if(el&&el.offsetParent!==null)y=Math.max(y,el.offsetTop+el.offsetHeight);}return y+8;}
+function padTop(){const b=$('brand');let y=0;for(const el of [b]){   // the «Мэдээлэл» button sits over the sky in the corner, so only the brand chip keeps the yard down
+ if(el&&el.offsetParent!==null)y=Math.max(y,el.offsetTop+el.offsetHeight);}return y+8;}
 function padBot(){const p=$('pkgs');return p&&p.offsetParent!==null?(stage.clientHeight-p.offsetTop)+10:16;}
+if(document.fonts)document.fonts.ready.then(()=>{if(ST.autoFrame)reframe(false);});   // the cards' height settles once the web fonts are in
 function fitFor(box,th,ph,margin){const c=box.getCenter(V(0,0,0));
  const dir=V(Math.sin(ph)*Math.sin(th),Math.cos(ph),Math.sin(ph)*Math.cos(th)),right=V(Math.cos(th),0,-Math.sin(th)),up=new THREE.Vector3().crossVectors(dir,right).normalize();
  let ex=0,ey=0,ez=0;for(let i=0;i<8;i++){const p=V(i&1?box.max.x:box.min.x,i&2?box.max.y:box.min.y,i&4?box.max.z:box.min.z).sub(c);ex=Math.max(ex,Math.abs(p.dot(right)));ey=Math.max(ey,Math.abs(p.dot(up)));ez=Math.max(ez,p.dot(dir));}
  const tv=Math.tan(THREE.MathUtils.degToRad(cam.fov/2));const H=Math.max(10,stage.clientHeight),top=padTop(),bot=padBot(),use=Math.max(H*0.42,H-top-bot);
- const d=clamp(Math.max(ey/tv*(H/use),ex/(tv*cam.aspect))*margin+ez*0.6,2.5,70);const sh=((bot-top)/2)*(2*d*tv/H);c.addScaledVector(up,-sh);return {c,d};}
+ const d=clamp(Math.max(ey/tv*(H/use),ex/(tv*cam.aspect))*margin+ez*0.6,2.5,110);const sh=((bot-top)/2)*(2*d*tv/H);c.addScaledVector(up,-sh);return {c,d};}
 function nearAngle(cur,target){let d=target-cur;d=((d+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;return cur+d;}
 function aimAt(box,th,ph,margin=1.06){O.dth=nearAngle(O.dth,th);O.dph=ph;const f=fitFor(box,O.dth,O.dph,margin);O.dt.copy(f.c);O.dr=f.d;}
 
 // ===================== STATE =====================
-const ST={cur:1,tr:null,queue:0,cut:true,cutK:1,ins:[false,false,false,true],inK:[0,0,0,1],spin:false,auto:false,autoT:0,view:'yard',autoFrame:true,lastAct:0};
-function reframe(instant){const p=PK[ST.cur];let box,th=HOMEA[0],ph=HOMEA[1],m=1.04;
- if(ST.view==='near'){box=(p.nearNarrow&&cam.aspect<1.1)?p.nearNarrow:p.near;th=p.nearAng[0];ph=p.nearAng[1];m=1.12;}else if(ST.view==='pkg')box=p.all;else{box=p.yard;ph=1.02;m=cam.aspect<0.8?0.93:1.0;}
- aimAt(box,th,ph,m);if(instant){O.tgt.copy(O.dt);O.r=O.dr;O.th=O.dth;O.ph=O.dph;}}
+const ST={cur:1,tr:null,queue:0,cut:true,cutK:1,ins:[false,true,true,true],inK:[0,1,1,1],spin:false,auto:false,autoT:0,autoFrame:true,lastAct:0};
+// one framed view (the whole yard); everything else is the visitor's own camera (drag, wheel, pinch, the joystick pad)
+function reframe(instant){aimAt(PK[ST.cur].yard,HOMEA[0],1.02,cam.aspect<0.62?1.18:(cam.aspect<0.8?0.93:1.0));ST.homeR=O.dr;   // tall phone screens (3D full height): a little more room so the whole yard fits the width
+ if(instant){O.tgt.copy(O.dt);O.r=O.dr;O.th=O.dth;O.ph=O.dph;}}
 function setSweep(a,b,s){SW[a].set(V(1,0,0),-s);SW[b].set(V(-1,0,0),s);}
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function startTr(a,b){ST.tr={a,b,t:0,dur:RM?1.0:(SMALL?2.2:2.6)};for(const p of PK[b].pops){p.t0=-1;p.o.scale.setScalar(1);}PK[b].G.visible=true;setSweep(a,b,X0-0.7);FX.visible=true;pencil.visible=true;
- renderSheet(b);syncCards(b);ST.autoFrame=true;reframeTo(b);syncTools();hideHint();ST.lastAct=performance.now();}
+ renderSheet(b);syncCards(b);ST.autoFrame=true;reframeTo(b);hideHint();ST.lastAct=performance.now();}
 function reframeTo(k){const c=ST.cur;ST.cur=k;reframe(false);ST.cur=c;}
 function endTr(){const {a,b}=ST.tr;for(const p of PK[b].pops)p.o.scale.setScalar(1);PK[a].G.visible=false;SW[a].set(V(1,0,0),OFFP);SW[b].set(V(1,0,0),OFFP);ST.cur=b;ST.tr=null;FX.visible=false;pencil.visible=false;
  if(ST.queue&&ST.queue!==ST.cur){const q=ST.queue;ST.queue=0;startTr(ST.cur,q);}else ST.queue=0;}
-function goPkg(k){k=clamp(k|0,1,3);if(ST.tr){ST.queue=k;syncCards(k);return;}if(k===ST.cur){ST.autoFrame=true;reframe(false);syncTools();return;}startTr(ST.cur,k);}
+function goPkg(k){k=clamp(k|0,1,3);if(ST.tr){ST.queue=k;syncCards(k);return;}if(k===ST.cur){ST.autoFrame=true;reframe(false);return;}startTr(ST.cur,k);}
 
 // ===================== LABELS =====================
 const labelsEl=$('labels'),linesEl=$('lines'),SVGNS='http://www.w3.org/2000/svg';const LBLS=[];
@@ -1998,11 +2102,10 @@ function renderSheet(k){const d=INFO[k];const ck=a=>`<ul class="checks">${a.map(
  <div class="badge"><span class="ic">${IC[d.icon]}</span>${d.badge}</div>`;
  if(d.groups)h+=d.groups.map(([t,a])=>`<div class="grp"><h3>${t}</h3>${ck(a)}</div>`).join('');else h+=ck(d.checks);
  h+=v3dBlock(k);if(PK[k].tank)h+='%SIZES%';else if(d.spec)h+=`<p class="spec">${d.spec}</p>`;
- if(d.flow)h+=`<div class="grp"><h3>Бохир ус хэрхэн урсдаг вэ?</h3><ol class="flow">${d.flow.map((t,i)=>`<li><span class="fn s${i}">${i+1}</span><span>${t}</span></li>`).join('')}</ol><button type="button" class="flowbtn" data-flow="${k}">▶ Урсгалыг ойроос харах</button></div>`;
+ if(d.flow)h+=`<div class="grp"><h3>Бохир ус хэрхэн урсдаг вэ?</h3><ol class="flow">${d.flow.map((t,i)=>`<li><span class="fn s${i}">${i+1}</span><span>${t}</span></li>`).join('')}</ol><button type="button" class="flowbtn" data-flow="${k}">▶ Танкийн дотор урсгалыг харах</button></div>`;
  h+=`<p class="yard">${d.yard}</p>`;
  sheetEl.classList.add('fade');setTimeout(()=>{sheetEl.innerHTML=h.replace('%SIZES%',()=>sizeBlock(k));sheetEl.classList.remove('fade');},140);}
 function syncCards(k){document.querySelectorAll('.pk').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.k===k?'true':'false'));}
-function syncTools(){const set=(id,on)=>{const b=$(id);if(b)b.setAttribute('aria-pressed',on?'true':'false');};set('bAll',ST.view==='yard');set('bNear',ST.view==='near');}
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();let toastT=0,tankPop=0,popK=0;
 function showToast(html){const t=$('toast');if(!t)return;t.innerHTML=html;t.hidden=false;t.style.opacity=1;toastT=3.2;}
 function setTank(k,i){const T=PK[k]&&PK[k].tank;if(!T||i===T.i)return;
@@ -2025,7 +2128,11 @@ let hintOn=true;function hideHint(){if(!hintOn)return;hintOn=false;const h=$('hi
 
 // ===================== UPDATE LOOP =====================
 const _tmp=V(0,0,0);
+let SWY=null;   // the idle sway of the yard: its base angle and time
 function update(dt,t){
+ // from 11 m away from the toilet the house starts fading, from 6 m it is see-through (22 %)
+ if(HF.mats.length){const k=(ST.cur===1&&!ST.tr&&!VW.open)?clamp((11-cam.position.distanceTo(HF.pos))/5,0,1):0;HF.k+=(k-HF.k)*Math.min(1,dt*5);if(HF.k<0.003)HF.k=0;
+  const on=HF.k>0;for(const m of HF.mats){const t=on||m.userData.baseT;if(m.transparent!==t){m.transparent=t;m.depthWrite=on?false:m.userData.baseDW;m.needsUpdate=true;}m.opacity=m.userData.base*(1-0.78*HF.k);}}   // glass keeps its own transparency
  if(toastT>0){toastT-=dt;const el=$('toast');if(el){if(toastT<=0){el.style.opacity=0;setTimeout(()=>{if(toastT<=0)el.hidden=true;},350);}}}
  if(tankPop>0&&popK){tankPop=Math.max(0,tankPop-dt*3.2);const T=PK[popK].tank,g=T.TB;
    if(g){const w=Math.sin(tankPop*Math.PI)*tankPop,q=1+0.07*w,qy=1+0.035*w,p=T.pivot(),b=T.base;g.scale.set(q,qy,q);g.position.set(b.x+p.x*(1-q),b.y+p.y*(1-qy),b.z+p.z*(1-q));}}
@@ -2049,6 +2156,10 @@ function update(dt,t){
  // auto tour through the packages
  if(ST.auto&&!ST.tr){ST.autoT+=dt;if(ST.autoT>6.5){ST.autoT=0;goPkg(ST.cur%3+1);}}
  if(ST.spin&&!ptr.size)O.dth+=dt*0.12;
+ // idle: the yard sways a little on its own (about 10 degrees each way, a 15 s swing, fading in); any touch, drag or zoom stops it
+ {const idle=(performance.now()-ST.lastAct)/1000;if(!RM&&!ST.tr&&!ptr.size&&!VW.open&&idle>3.5&&Math.abs(inert.th)<0.002){if(!SWY)SWY={b:O.dth,t:0};SWY.t+=dt;
+   const zf=Math.min(1,Math.pow(O.dr/(ST.homeR||O.dr),2));   // zoomed in, the sway shrinks (half the distance: a quarter of it)
+   O.dth=SWY.b+Math.sin(SWY.t*0.42)*0.17*zf*Math.min(1,SWY.t/3);}else SWY=null;}
  if(!ptr.size&&(Math.abs(inert.th)>0.002||Math.abs(inert.ph)>0.002)){O.dth+=inert.th*dt;O.dph=clamp(O.dph+inert.ph*dt,0.18,1.5);const dk=Math.exp(-dt*3.4);inert.th*=dk;inert.ph*=dk;}
  const k=1-Math.exp(-dt*(ST.tr?3.2:6));O.tgt.lerp(O.dt,k);O.r+=(O.dr-O.r)*k;O.th+=(O.dth-O.th)*(1-Math.exp(-dt*8));O.ph+=(O.dph-O.ph)*(1-Math.exp(-dt*8));
  const sp=Math.sin(O.ph);cam.position.set(O.tgt.x+O.r*sp*Math.sin(O.th),O.tgt.y+O.r*Math.cos(O.ph),O.tgt.z+O.r*sp*Math.cos(O.th));cam.lookAt(O.tgt);
@@ -2059,38 +2170,72 @@ function update(dt,t){
 
 // ===================== POINTER & KEYS =====================
 const ptr=new Map();let down=null,pinch0=0,r0=0,lastMid=null,lastMv=0;const inert={th:0,ph:0};
-const UI_SEL='#pkgs,#tools,#brand,#hint,#toast,.lab.tap,.lab.pv,#vClose,#vSizes,#vPrice,#vPriceBtn';
+const UI_SEL='#pkgs,#tools,#guide,#brand,#hint,#toast,.lab.tap,.lab.pv,#vClose,#vSizes,#vPrice,#vPriceBtn';
 function userCam(){ST.autoFrame=false;ST.lastAct=performance.now();}
+// info panel: slides away to the side and back (the 3D stage grows into its place); phones and short landscape screens show it as a
+// drawer over the 3D that starts closed, closed again by ✕, the shade or Escape
+const DRAWER=matchMedia('(max-width:860px),(orientation:landscape) and (max-height:540px)');
+let pslideT=0;function setPanel(open){const B=document.body;B.classList.add('pslide');clearTimeout(pslideT);pslideT=setTimeout(()=>B.classList.remove('pslide'),420);B.classList.toggle('pclosed',!open);const t=$('pTab');t.setAttribute('aria-expanded',open?'true':'false');
+ t.innerHTML=open?'Мэдээлэл <b aria-hidden="true">›</b>':'<b aria-hidden="true">‹</b> Мэдээлэл';{const l=open?'Мэдээллийг хажуу тийш нуух':'Мэдээллийг харах';t.title=l;t.setAttribute('aria-label',l);}
+ if(open&&DRAWER.matches)$('pClose').focus({preventScroll:true});}
+setPanel(!DRAWER.matches);
+DRAWER.addEventListener('change',e=>setPanel(!e.matches));
+$('pTab').addEventListener('click',()=>setPanel(document.body.classList.contains('pclosed')));
+$('pClose').addEventListener('click',()=>{setPanel(false);$('pTab').focus({preventScroll:true});});
+$('pShade').addEventListener('click',()=>setPanel(false));
+// guide: shown once on a device's first visit (remembered in this browser), «?» opens it again; mouse or touch wording
+{const g=$('guide'),hb=$('hBtn'),ok=$('gOk'),touch=matchMedia('(pointer:coarse)').matches;
+ if(touch)g.querySelectorAll('[data-t]').forEach(e=>{e.textContent=e.dataset.t;});
+ const open=()=>{if(!g.hidden)return;g.hidden=false;hideHint();requestAnimationFrame(()=>g.classList.add('on'));ok.focus({preventScroll:true});};
+ const close=back=>{if(g.hidden)return;g.classList.remove('on');setTimeout(()=>{g.hidden=true;},200);try{localStorage.setItem('pc3d-guide','1');}catch(_){}if(back)hb.focus({preventScroll:true});};
+ hb.addEventListener('click',open);ok.addEventListener('click',()=>close(true));g.addEventListener('click',e=>{if(e.target===g)close(true);});
+ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!g.hidden){close(true);e.preventDefault();e.stopImmediatePropagation();}},true);
+ let seen=false;try{seen=localStorage.getItem('pc3d-guide')==='1';}catch(_){}
+ if(!seen&&!/[?&](shot|noguide)\b/.test(location.search))setTimeout(open,900);}
 stage.addEventListener('pointerdown',e=>{if(e.target.closest(UI_SEL))return;canvas.focus({preventScroll:true});stage.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
  down={x:e.clientX,y:e.clientY,t:performance.now(),moved:0,pan:e.shiftKey||e.button===2||e.button===1};inert.th=inert.ph=0;if(VW.open)VW.idle=0;
  if(ptr.size===2){const [a,b]=[...ptr.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);r0=VW.open?VW.dr:O.dr;lastMid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};down.moved=99;}});
 let hvT=0;function hover(e){if(VW.open||e.pointerType!=='mouse'||e.target!==canvas)return;const now=performance.now();if(now-hvT<160)return;hvT=now;canvas.style.cursor=pickAt(e.clientX,e.clientY)?'pointer':'';}
 stage.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId)){hover(e);return;}const p=ptr.get(e.pointerId);const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;if(down)down.moved+=Math.abs(dx)+Math.abs(dy);
- if(VW.open){VW.idle=0;if(ptr.size===1){VW.dth-=dx*0.0075;VW.dph=clamp(VW.dph-dy*0.0055,0.2,1.56);}else if(ptr.size===2){const [a,b]=[...ptr.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)VW.dr=clamp(r0*pinch0/d,VW.rMin,VW.rMax);}return;}
+ if(VW.open){VW.idle=0;if(ptr.size===1){VW.dth-=dx*0.0075;VW.dph=clamp(VW.dph-dy*0.0055,0.2,1.56);}else if(ptr.size===2){const [a,b]=[...ptr.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)zoomAt((a.x+b.x)/2,(a.y+b.y)/2,clamp(r0*pinch0/d,VW.rMin,VW.rMax)/VW.dr,true);}return;}
  if(down&&down.moved>5)userCam();
  if(ptr.size===1){if(down&&down.pan)panBy(dx,dy);else{O.dth-=dx*0.0062;O.dph=clamp(O.dph-dy*0.005,0.18,1.5);const now=performance.now(),dtE=Math.max(8,now-(lastMv||now-16))/1000;lastMv=now;inert.th=inert.th*0.5-(dx*0.0062/dtE)*0.5;inert.ph=inert.ph*0.5-(dy*0.005/dtE)*0.5;}}
- else if(ptr.size===2){const [a,b]=[...ptr.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)O.dr=clamp(r0*pinch0/d,2.5,70);const m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};if(lastMid)panBy(m.x-lastMid.x,m.y-lastMid.y);lastMid=m;}});
+ else if(ptr.size===2){const [a,b]=[...ptr.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0>0)zoomAt((a.x+b.x)/2,(a.y+b.y)/2,clamp(r0*pinch0/d,2.5,110)/O.dr,false);const m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};if(lastMid)panBy(m.x-lastMid.x,m.y-lastMid.y);lastMid=m;}});
+// zoom toward the point under the mouse / between the fingers: the view scales about that point (camera and target together), so it stays put on screen.
+// The point is what the ray hits (the yard or the product; cut-away parts don't count), else the plane through the target; it is kept for a
+// moment so one wheel turn or pinch keeps its anchor. The target stays near the yard / the product, so zooming out never drifts away.
+const _zp=V(0,0,0),_zn=V(0,0,0),_zpl=new THREE.Plane(),_zb=new THREE.Box3();let zAnc=null,zT=0;
+function zoomPoint(x,y,viewer){const r=canvas.getBoundingClientRect(),c=viewer?VW.cam:cam,root=viewer?VW.G:PK[ST.cur].G,tg=viewer?VW.tgt:O.tgt;
+ ndc.set((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);ray.setFromCamera(ndc,c);
+ if(root)for(const h of ray.intersectObject(root,true))if(shown(h.object)&&!clippedAt(h))return _zp.copy(h.point);
+ c.getWorldDirection(_zn);_zpl.setFromNormalAndCoplanarPoint(_zn,tg);return ray.ray.intersectPlane(_zpl,_zp)||_zp.copy(tg);}
+function zoomAt(x,y,f,viewer){const now=performance.now();if(!zAnc||now-zT>260||zAnc.v!==viewer)zAnc={p:zoomPoint(x,y,viewer).clone(),v:viewer};zT=now;
+ if(viewer){const r0=VW.dr;VW.dr=clamp(VW.dr*f,VW.rMin,VW.rMax);VW.dtg.lerp(zAnc.p,1-VW.dr/r0);if(VW.G){_zb.setFromObject(VW.G).expandByScalar(0.15);VW.dtg.clamp(_zb.min,_zb.max);}return;}
+ const r0=O.dr;O.dr=clamp(O.dr*f,2.5,110);O.dt.lerp(zAnc.p,1-O.dr/r0);const b=PK[ST.cur].yard;if(b){_zb.copy(b).expandByScalar(2);O.dt.clamp(_zb.min,_zb.max);}}
 function panBy(dx,dy){const right=V(Math.cos(O.th),0,-Math.sin(O.th));const dir=V(Math.sin(O.ph)*Math.sin(O.th),Math.cos(O.ph),Math.sin(O.ph)*Math.cos(O.th));const up=new THREE.Vector3().crossVectors(dir,right).normalize();
  const s=O.r*2*Math.tan(THREE.MathUtils.degToRad(cam.fov/2))/Math.max(200,stage.clientHeight);const mv=right.multiplyScalar(-dx*s).add(up.multiplyScalar(dy*s));O.dt.add(mv);O.tgt.add(mv);}
+// a second short tap within 0.32 s and 40 px of the first (touch / pen only: the mouse has its own dblclick)
+let lastTap=null;function dblTap(e){if(e.pointerType==='mouse')return false;const now=performance.now();
+ if(lastTap&&now-lastTap.t<320&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<40){lastTap=null;return true;}lastTap={t:now,x:e.clientX,y:e.clientY};return false;}
 const endPtr=e=>{const was=ptr.has(e.pointerId);const d=down;ptr.delete(e.pointerId);pinch0=0;lastMid=null;
- if(VW.open){if(ptr.size===0)down=null;return;}
- if(was&&e.type==='pointerup'&&d&&ptr.size===0&&d.moved<7&&performance.now()-d.t<600)tapAt(e.clientX,e.clientY);
+ const tap=was&&e.type==='pointerup'&&d&&ptr.size===0&&d.moved<7&&performance.now()-d.t<600;
+ if(VW.open){if(tap&&dblTap(e)){VW.dph=1.16;vwFit();}if(ptr.size===0)down=null;return;}
+ if(tap&&!tapAt(e.clientX,e.clientY)&&dblTap(e)){ST.autoFrame=true;inert.th=inert.ph=0;reframe(false);}
  if(was&&ptr.size===0&&down&&down.moved>=7&&performance.now()-lastMv<90){const sp=Math.hypot(inert.th,inert.ph);if(sp>5){const kk=5/sp;inert.th*=kk*1.5;inert.ph*=kk*1.5;}}else{inert.th=inert.ph=0;}if(ptr.size===0)down=null;};
 stage.addEventListener('pointerup',endPtr);stage.addEventListener('pointercancel',endPtr);stage.addEventListener('contextmenu',e=>e.preventDefault());
-stage.addEventListener('wheel',e=>{if(e.target.closest(UI_SEL))return;e.preventDefault();if(VW.open){VW.idle=0;VW.dr=clamp(VW.dr*Math.exp(e.deltaY*0.0012),VW.rMin,VW.rMax);return;}userCam();O.dr=clamp(O.dr*Math.exp(e.deltaY*0.0011),2.5,70);},{passive:false});
-stage.addEventListener('dblclick',e=>{if(e.target.closest(UI_SEL))return;if(VW.open){VW.dph=1.16;vwFit();return;}ST.view='yard';ST.autoFrame=true;reframe(false);syncTools();});
+stage.addEventListener('wheel',e=>{if(e.target.closest(UI_SEL))return;e.preventDefault();if(VW.open){VW.idle=0;zoomAt(e.clientX,e.clientY,Math.exp(e.deltaY*0.0012),true);return;}userCam();zoomAt(e.clientX,e.clientY,Math.exp(e.deltaY*0.0011),false);},{passive:false});
+stage.addEventListener('dblclick',e=>{if(e.target.closest(UI_SEL))return;if(VW.open){VW.dph=1.16;vwFit();return;}ST.autoFrame=true;reframe(false);});
 window.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;const kk=e.key;let h=true;
+ if(kk==='Escape'&&DRAWER.matches&&!document.body.classList.contains('pclosed')){setPanel(false);$('pTab').focus({preventScroll:true});e.preventDefault();return;}
  if(VW.open){if(kk==='Escape'){if($('vPrice').classList.contains('open'))vpOpen(false);else closeViewer();}else if(kk==='ArrowLeft'){VW.dth+=0.2;VW.idle=0;}else if(kk==='ArrowRight'){VW.dth-=0.2;VW.idle=0;}else if(kk==='ArrowUp')VW.dph=clamp(VW.dph-0.1,0.2,1.56);else if(kk==='ArrowDown')VW.dph=clamp(VW.dph+0.1,0.2,1.56);
    else if(kk==='+'||kk==='=')VW.dr=clamp(VW.dr*0.88,VW.rMin,VW.rMax);else if(kk==='-')VW.dr=clamp(VW.dr/0.88,VW.rMin,VW.rMax);else h=false;if(h)e.preventDefault();return;}
  if(kk==='1'||kk==='2'||kk==='3')goPkg(+kk);else if(kk==='ArrowLeft'){O.dth+=0.12;userCam();}else if(kk==='ArrowRight'){O.dth-=0.12;userCam();}else if(kk==='ArrowUp'){O.dph=clamp(O.dph-0.08,0.18,1.5);userCam();}else if(kk==='ArrowDown'){O.dph=clamp(O.dph+0.08,0.18,1.5);userCam();}
- else if(kk==='+'||kk==='='){O.dr=clamp(O.dr*0.88,2.5,70);userCam();}else if(kk==='-'){O.dr=clamp(O.dr/0.88,2.5,70);userCam();}else h=false;
+ else if(kk==='+'||kk==='='){O.dr=clamp(O.dr*0.88,2.5,110);userCam();}else if(kk==='-'){O.dr=clamp(O.dr/0.88,2.5,110);userCam();}else h=false;
  if(h&&document.activeElement===canvas)e.preventDefault();});
 
 // ===================== BUTTONS =====================
-document.querySelectorAll('.pk').forEach(b=>b.addEventListener('click',()=>{ST.auto=false;syncTools();goPkg(+b.dataset.k);}));
-sheetEl.addEventListener('click',e=>{const v3=e.target.closest('[data-v3d]');if(v3){if(!ST.tr)openViewer(v3.dataset.v3d,ST.cur);return;}const z=e.target.closest('.szb');if(z){if(PK[ST.cur].tank&&!ST.tr)setTank(ST.cur,+z.dataset.size);return;}const b=e.target.closest('.flowbtn');if(!b)return;const k=+b.dataset.flow;if(ST.tr||ST.cur!==k)return;ST.auto=false;ST.cut=true;ST.ins[k]=true;ST.view='near';ST.autoFrame=true;reframe(false);syncTools();});
-$('bAll').onclick=()=>{ST.ins=[false,false,false,true];ST.view='yard';ST.autoFrame=true;reframe(false);syncTools();};
-$('bNear').onclick=()=>{ST.view='near';ST.autoFrame=true;reframe(false);syncTools();};
+document.querySelectorAll('.pk').forEach(b=>b.addEventListener('click',()=>{ST.auto=false;goPkg(+b.dataset.k);}));
+sheetEl.addEventListener('click',e=>{const v3=e.target.closest('[data-v3d]');if(v3){if(!ST.tr)openViewer(v3.dataset.v3d,ST.cur);return;}const z=e.target.closest('.szb');if(z){if(PK[ST.cur].tank&&!ST.tr)setTank(ST.cur,+z.dataset.size);return;}const b=e.target.closest('.flowbtn');if(!b)return;const k=+b.dataset.flow;if(ST.tr||ST.cur!==k)return;ST.auto=false;ST.cut=true;ST.ins[k]=true;});
 $('bCopy').onclick=()=>{const t='70004308',b=$('bCopy');const ok=()=>{b.textContent='Хуулсан';setTimeout(()=>{b.textContent='Хуулах';},1600);};
  try{navigator.clipboard.writeText(t).then(ok,()=>{selPhone();});}catch(e){selPhone();}};
 function selPhone(){const r=document.createRange();r.selectNodeContents($('phone'));const s=getSelection();s.removeAllRanges();s.addRange(r);}
@@ -2115,11 +2260,21 @@ const PRODUCTS={
   // each view swings the camera to the angle of the matching product render (whole: front-right, lid: from above behind the keys, inside / exploded: side on)
   mview:{whole:[0.98,1.2],lid:[2.06,0.74],inside:[1.57,1.3],explode:[1.57,1.17]}},
  cabin:{cache:1,title:()=>'Дугуй кабин',sub:()=>'Ганган цагаан · угааж цэвэрлэх боломжтой',build:g=>buildCabin(g)},
+ // the vacuum pump in its 2 x Koltso 700 with the lid: "Дотор тал" cuts the rings and the lid open at the front (own material copies, so the yard keeps its own)
+ pump:{cache:1,title:()=>'Вакуум насос',sub:()=>'2 ш Кольцо 700 дотор · соруулах хоолой 2 амтай',view:[0.45,1.1],
+  modes:[["inside","Дотор тал"],["whole","Бүтэн"]],mview:{inside:[0.45,1.1],whole:[0.62,1.16]},
+  build:g=>{pumpNeck(g,-1.25);const cut=new THREE.Plane(V(0,0,-1),0),CM=[];
+   g.traverse(m=>{if(m.isMesh&&m.userData.ncut){m.material=Array.isArray(m.material)?m.material.map(x=>x.clone()):m.material.clone();CM.push(...[].concat(m.material));}});
+   const show=md=>{cut.constant=g.position.z;for(const x of CM){x.clippingPlanes=md==='inside'?[cut]:[];x.clipShadows=true;x.needsUpdate=true;}};   // the plane goes through the neck's centre after the viewer centres it
+   const L=(t,x,y,z)=>({t,o:g,p:V(x,y,z),all:false,self:false}),S={lk:0};   // labels in the neck's own coordinates (pumpNeck)
+   const C={mode:'inside',labels:{inside:[L('Вакуум насос',0,0.72,0.06),L('Соруулах хоолой · дээд ам',0.24,1.25,0),L('Хажуугийн ам',0.55,0.45,0),L('2 ш Кольцо 700',-0.36,0.3,-0.06)],
+     whole:[L('2 ш Кольцо 700',-0.37,0.3,0.05),L('Таг',-0.1,1.08,0.1),L('Соруулах хоолой',0.24,1.25,0)]},sway:{inside:[0.3,0.45]},get lk(){return S.lk;},
+    set(md){C.mode=md;show(md);S.lk=0;},pose:show,restore(){show(C.mode);},update(dt){S.lk=Math.min(1,S.lk+dt*2.5);}};g.userData.ctl=C;}},
  k700:{cache:1,title:()=>'Кольцо 700',sub:()=>'Ø0.7 × 0.5 м · 27 кг',build:g=>koltso(g,0.35,0.5,0,[0.31,0.66])},
  k1000:{cache:1,title:()=>'Кольцо 1000',sub:()=>'Ø1 × 0.7 м · 64 кг',build:g=>koltso(g,0.5,0.7,0,[0.31,0.66])},
  tank:{sized:1,price:1,view:[0.0,1.42],title:k=>`Пластик танк · ${curS(k).t} тн`,sub:k=>{const s=curS(k);return `Ø${s.D} × ${s.Hm} м · ${s.kg} кг · ${s.ppl} хүнд`;},
   build:(g,k)=>{const s=curS(k);latticeTank(g,s.R,s.n,s.MH,s.look,s.lid);}},
- septic:{sized:1,price:1,title:k=>`Септик танк · ${curS(k).t} тн`,sub:k=>{const s=curS(k);return `${s.ppl} хүнд · ${s.nr} хүзүүтэй`;},
+ septic:{sized:1,price:1,title:k=>`Септик танк · ${curS(k).t} тн`,sub:k=>{const s=curS(k);return `Ø${s.od} × ${s.L} м · ${s.ppl} хүнд${s.lpd?` · ${s.lpd} л/хоног`:''} · ${s.nr} хүзүүтэй`;},
   build:(g,k)=>{const s=curS(k);septicTank(g,{cx:0,R:s.R,L:s.L,risers:s.nr,k7:s.k7,bare:true});}}};
 function vwRelease(){if(!VW.G)return;VW.scene.remove(VW.G);if(!PRODUCTS[VW.id].cache)freeGroup(VW.G);VW.G=null;}
 function vwBuild(){const P=PRODUCTS[VW.id];vwRelease();let W=P.cache?VW.cache[VW.id]:null;
@@ -2138,7 +2293,7 @@ function vwFit(){const s=VW.G.userData.size,rad=0.5*s.length(),vf=THREE.MathUtil
  VW.cam.aspect=(W+side)/H;if(side)VW.cam.setViewOffset(W+side,H,side,0,W,H);else VW.cam.clearViewOffset();VW.cam.updateProjectionMatrix();VW.lk=W+'x'+H;
  const hf=2*Math.atan(Math.tan(vf/2)*Math.max(120,W-side)/H);
  const top=vb.querySelector('.vbar').offsetHeight+16,bot=vb.querySelector('.vfoot').offsetHeight+16,use=Math.max(H*0.4,H-top-bot);
- VW.dr=Math.max(rad/Math.sin(vf/2)*(H/use),rad/Math.sin(hf/2))*0.95;VW.rMin=Math.max(0.5,rad*1.15);VW.rMax=VW.dr*2.4;
+ VW.dr=Math.max(rad/Math.sin(vf/2)*(H/use),rad/Math.sin(hf/2))*0.95;VW.fitR=VW.dr;VW.rMin=Math.max(0.5,rad*1.15);VW.rMax=VW.dr*2.4;
  const sh=((bot-top)/2)*(2*VW.dr*Math.tan(vf/2)/H);VW.dtg.set(0,s.y*0.47-sh,0);
  const k=VW.key,e=Math.max(s.x,s.y,s.z)*0.8+0.3;Object.assign(k.shadow.camera,{left:-e,right:e,top:e,bottom:-e,near:0.2,far:e*8+10});k.shadow.camera.updateProjectionMatrix();
  k.position.set(e*1.5,e*2.6+s.y,e*2.0);k.target.position.set(0,s.y*0.3,0);const fp=Math.max(s.x,s.z)*1.6+0.4;VW.blob.scale.set(fp,fp,1);}
@@ -2149,7 +2304,7 @@ function openViewer(id,k,keepList){let mode='whole';if(id.indexOf('@')>0){mode=i
  if(id==='kolt3')id=curS(3).k7?'k700':'k1000';if(!PRODUCTS[id]||ST.tr)return;VW.id=id;VW.k=k;if(!keepList)$('vPrice').classList.remove('open');
  document.body.classList.add('viewing');const v=$('viewer');v.hidden=false;vwBuild();
  const iv=PRODUCTS[id].view||[0.62,1.16];VW.th=VW.dth=iv[0];VW.ph=VW.dph=iv[1];VW.r=VW.dr*1.5;VW.idle=1.0;VW.open=true;ptr.clear();down=null;canvas.style.cursor='';
- requestAnimationFrame(()=>v.classList.add('on'));hideHint();ST.auto=false;syncTools();}
+ requestAnimationFrame(()=>v.classList.add('on'));hideHint();ST.auto=false;}
 function closeViewer(){if(!VW.open)return;VW.open=false;document.body.classList.remove('viewing');const v=$('viewer');v.classList.remove('on','wide','priced');v.hidden=true;vwRelease();vwLabels(true);
  const pb=$('vPrice');pb.classList.remove('open');pb.hidden=true;$('vPriceBtn').hidden=true;ptr.clear();down=null;last=performance.now();
  if(VW.k&&VW.k!==ST.cur&&PK[VW.k])goPkg(VW.k);}
@@ -2209,7 +2364,8 @@ function vwLabels(clear){const C=!clear&&VW.G&&VW.G.userData.ctl;
      o.it.dt.setAttribute('cx',o.x.toFixed(1));o.it.dt.setAttribute('cy',o.y.toFixed(1));}}}
 function vwUpdate(dt){if(VW.lk!==stage.clientWidth+'x'+stage.clientHeight){vwLayout();vwFit();}
  VW.t+=dt;const C=VW.G&&VW.G.userData.ctl;if(C)C.update(dt,VW.t);VW.tgt.lerp(VW.dtg,1-Math.exp(-dt*4.5));
- VW.idle+=dt;if(VW.idle>1.4&&!ptr.size)VW.dth+=dt*0.42;const k=1-Math.exp(-dt*7);VW.th+=(VW.dth-VW.th)*k;VW.ph+=(VW.dph-VW.ph)*k;VW.r+=(VW.dr-VW.r)*(1-Math.exp(-dt*4.5));
+ VW.idle+=dt;if(VW.idle>1.4&&!ptr.size){const sw=C&&C.sway&&C.sway[C.mode];   // idle: a gentle sway (about 20 degrees each way); a cut-open view sways on its open side
+   if(!VW.swb)VW.swb={b:sw?nearAngle(VW.th,sw[0]):VW.th,t:0};VW.swb.t+=dt;VW.dth=VW.swb.b+Math.sin(VW.swb.t*0.5)*(sw?sw[1]:0.36)*Math.min(1,Math.pow(VW.dr/(VW.fitR||VW.dr),2))*Math.min(1,VW.swb.t/2.5);}else VW.swb=null;   // smaller when zoomed inconst k=1-Math.exp(-dt*7);VW.th+=(VW.dth-VW.th)*k;VW.ph+=(VW.dph-VW.ph)*k;VW.r+=(VW.dr-VW.r)*(1-Math.exp(-dt*4.5));
  const sp=Math.sin(VW.ph);VW.cam.position.set(VW.tgt.x+VW.r*sp*Math.sin(VW.th),VW.tgt.y+VW.r*Math.cos(VW.ph),VW.tgt.z+VW.r*sp*Math.cos(VW.th));VW.cam.lookAt(VW.tgt);
  if(C){VW.cam.updateMatrixWorld();vwLabels();}}
 $('vClose').onclick=closeViewer;
@@ -2238,7 +2394,7 @@ try{
 for(let k=1;k<=3;k++)PK[k].G.visible=true;
 try{renderer.compile(scene,cam);}catch(e){}
 PK[2].G.visible=false;PK[3].G.visible=false;
-renderSheet(1);sheetEl.classList.remove('fade');syncCards(1);syncTools();reframe(true);
+renderSheet(1);sheetEl.classList.remove('fade');syncCards(1);reframe(true);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{for(const L of LBLS)L.w=0;});
 {const lg=new Image();lg.onload=()=>{const g=pcC.getContext('2d'),W=pcC.width,H=pcC.height;g.clearRect(0,0,W,H);g.fillStyle='#fff';rrect(g,4,4,W-8,H-8,34);g.fill();const s=Math.min((W-72)/lg.width,(H-56)/lg.height),w=lg.width*s,h=lg.height*s;g.drawImage(lg,(W-w)/2,(H-h)/2,w,h);M.pc.map.needsUpdate=true;};lg.src='logo.png';}
 let last=performance.now(),tNow=0,raf=0;
@@ -2249,7 +2405,7 @@ raf=requestAnimationFrame(loop);window.READY=true;
   fb=/[?&]fbclid=/.test(location.search)||/facebook\.|fb\.me|instagram\./i.test(document.referrer)||/FBAN|FBAV|FB_IAB|Instagram/.test(navigator.userAgent);
  if(!NOPRICE&&(m||(fb&&!/[?&]shot=/.test(location.search))))setTimeout(()=>{if(VW.open||ST.tr)return;const k=m&&m[1]?+m[1]:1;openViewer(k===3?'septic':'tank',k);if(!$('viewer').classList.contains('wide'))vpOpen(true);},500);}
 renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();cancelAnimationFrame(raf);fallback();});
-window.__app={vpPkg,vpOpen,BATCH,info:()=>({calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geo:renderer.info.memory.geometries,tex:renderer.info.memory.textures,prog:renderer.info.programs.length}),goPkg,ST,PK,O,cam,reframe,setTank,tapAt,pickAt,openViewer,closeViewer,VW,step:(n=30,dt=1/30)=>{for(let i=0;i<n;i++){tNow+=dt;update(dt,tNow);placeLabels();}renderer.render(scene,cam);placeLabels();},setView:v=>{ST.view=v;ST.autoFrame=true;reframe(true);syncTools();}};
+window.__app={vpPkg,vpOpen,BATCH,info:()=>({calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geo:renderer.info.memory.geometries,tex:renderer.info.memory.textures,prog:renderer.info.programs.length}),goPkg,ST,PK,O,cam,reframe,setTank,tapAt,pickAt,openViewer,closeViewer,VW,step:(n=30,dt=1/30)=>{for(let i=0;i<n;i++){tNow+=dt;update(dt,tNow);placeLabels();}renderer.render(scene,cam);placeLabels();}};
 }
 // build after the first paint so the page shows its frame and the loader right away
 const go=()=>{try{APP();}catch(e){console.error(e);const f=document.getElementById('fb');if(f)f.hidden=false;}const l=document.getElementById('load');if(l)l.hidden=true;};
