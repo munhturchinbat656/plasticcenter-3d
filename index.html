@@ -1196,37 +1196,67 @@ function tankConeLid(par,R,ns,s0,TM){const h=0.15,rc=0.44,Rl=R+0.012,a=0.31,geo=
 // Plastic Center ring module (1.1 t tank poster): smooth wall, a flat rounded flange at the top and at the bottom, thick flat horizontal bands
 // that stop at the vertical seams, each seam a flat strap with a recessed bolt channel beside it. Used for the koltso rings and the 1.1 t tank.
 function bandModule(par,R,H,y0,o){const S=SMALL?40:64,y1=y0+H,M_=o.mat,ns=o.seams||4,s0=o.seam0!==undefined?o.seam0:Math.PI/4;
- const fw=o.fw||0.034,ft=o.ft||0.032,bh=o.bh||0.07,bp=o.bp||0.026,gapA=(o.gap||0.075)/R;
- if(!o.noWall){const g=new THREE.CylinderGeometry(R,R,H,S,1,true);g.translate(0,y0+H/2,0);add(g,M_.wall,0,0,0,{parent:par});add(g,M_.inner,0,0,0,{parent:par,cast:false});}
- const rib=[],bolt=[];
- // flanges: flat rings with a rounded outer edge
- const fl=(yb,yt)=>{const e=Math.min(0.012,(yt-yb)/2.5);rib.push(lathe([[R-0.02,yb],[R+fw-e,yb],[R+fw,yb+e],[R+fw,yt-e],[R+fw-e,yt],[R-0.02,yt]],S));};
+ const fw=o.fw||0.034,ft=o.ft||0.032,bh=o.bh||0.07,bp=o.bp||0.026,gapA=(o.gap||0.075)/R,FR=o.fr||[0.31,0.66];
+ if(!o.noWall){const g=new THREE.CylinderGeometry(R,R,H,S,1,true);g.translate(0,y0+H/2,0);
+   // o.uvm: the wall texture in metres (1 m per repeat), each ring shifted so that stacked rings don't repeat
+   if(o.uvm){const uv=g.attributes.uv,u0=(y0*3.17+R*1.3)%1;for(let i=0;i<uv.count;i++)uv.setXY(i,u0+uv.getX(i)*TAU*R,y0+uv.getY(i)*H);}
+   add(g,M_.wall,0,0,0,{parent:par});add(g,M_.inner,0,0,0,{parent:par,cast:false});}
+ const rib=[],bolt=[],groove=[];
+ // flanges: flat rings, the outer edge rounded by o.fe (photos: a thin flat lip)
+ const fl=(yb,yt)=>{const e=o.fe!==undefined?o.fe:Math.min(0.012,(yt-yb)/2.5);rib.push(lathe([[R-0.02,yb],[R+fw-e,yb],[R+fw,yb+e],[R+fw,yt-e],[R+fw-e,yt],[R-0.02,yt]],S));};
  if(o.top!==false)fl(y1-ft,y1);if(o.bottom!==false)fl(y0,y0+ft*1.1);
- // bands, one arc between each pair of seams, with end caps
- const BP=c=>{const r0=R-0.004,e=o.be||Math.min(0.014,bh/4);return [[r0,c-bh/2],[R+bp-e,c-bh/2],[R+bp,c-bh/2+e],[R+bp,c+bh/2-e],[R+bp-e,c+bh/2],[r0,c+bh/2]];};
+ // raised rings, one arc between each pair of seams, with end caps: the bands, and with o.joints the thin plank joints between them
+ const BP=(c,h,p,e)=>{const r0=R-0.004;return [[r0,c-h/2],[R+p-e,c-h/2],[R+p,c-h/2+e],[R+p,c+h/2-e],[R+p-e,c+h/2],[r0,c+h/2]];};
  const cap=(P,ph,flip)=>{const sh=new THREE.Shape(P.map(p=>new THREE.Vector2(p[0],p[1])));const g=new THREE.ShapeGeometry(sh);const pa=g.attributes.position;
    for(let i=0;i<pa.count;i++){const r=pa.getX(i),y=pa.getY(i);pa.setXYZ(i,r*Math.sin(ph),y,r*Math.cos(ph));}
    if(flip&&g.index){const ix=g.index.array;for(let i=0;i<ix.length;i+=3){const t=ix[i];ix[i]=ix[i+2];ix[i+2]=t;}}g.computeVertexNormals();return g;};
- for(const f of (o.fr||[0.31,0.66])){const P=BP(y0+f*H);
-   for(let k=0;k<ns;k++){const p0=s0+k*TAU/ns+gapA/2,len=TAU/ns-gapA;rib.push(new THREE.LatheGeometry(P.map(p=>new THREE.Vector2(p[0],p[1])),Math.max(6,Math.round(S/ns)),p0,len));
-     rib.push(cap(P,p0,false),cap(P,p0+len,true));}}
- // seams: a flat strap beside a recessed channel with bolts
- for(let k=0;k<ns;k++){const a=s0+k*TAU/ns,sa=Math.sin(a),ca=Math.cos(a),ta=V(ca,0,-sa);
-   const sw=o.sw||0.028,sp=o.sp||0.02,yb=y0+(o.bottom!==false?ft*1.1:0),yt=y1-(o.top!==false?ft:0);
-   const st=placed(new THREE.BoxGeometry(sw,yt-yb,sp),0,(yb+yt)/2,0,0,a,0);st.translate((R+sp/2-0.002)*sa-ta.x*gapA*R*0.22,0,(R+sp/2-0.002)*ca-ta.z*gapA*R*0.22);rib.push(st);
-   const bx=(R+0.004)*sa+ta.x*gapA*R*0.18,bz=(R+0.004)*ca+ta.z*gapA*R*0.18;
-   for(let y=yb+0.07;y<yt-0.04;y+=(o.bstep||0.2))bolt.push(placed(new THREE.BoxGeometry(0.016,0.016,0.012),bx,y,bz,0,a,0));}
- add(mergeGeos(rib),M_.rib,0,0,0,{parent:par});if(bolt.length)add(mergeGeos(bolt),M_.bolt||mBolt,0,0,0,{parent:par,cast:false});}
-// koltso rings in that style: black ribbed rings, two bands each (Koltso 700: 0.7 x 0.5 m · Koltso 1000: 1.0 x 0.7 m)
-const mK7=new THREE.MeshPhysicalMaterial({color:0x090a0b,roughness:0.52,clearcoat:0.22,clearcoatRoughness:0.42,envMapIntensity:0.32,bumpMap:pebB,bumpScale:0.004});
-const mK7r=new THREE.MeshPhysicalMaterial({color:0x0d0e10,roughness:0.46,clearcoat:0.24,clearcoatRoughness:0.42,envMapIntensity:0.32});
-const mK7i=new THREE.MeshStandardMaterial({color:0x0c0d0f,roughness:0.85,envMapIntensity:0.2,side:THREE.BackSide});
+ const arcs=P=>{for(let k=0;k<ns;k++){const p0=s0+k*TAU/ns+gapA/2,len=TAU/ns-gapA;rib.push(new THREE.LatheGeometry(P.map(p=>new THREE.Vector2(p[0],p[1])),Math.max(6,Math.round(S/ns)),p0,len));
+     rib.push(cap(P,p0,false),cap(P,p0+len,true));}};
+ for(const f of FR)arcs(BP(y0+f*H,bh,bp,o.be||Math.min(0.014,bh/4)));
+ if(o.joints){const F=[0,...FR,1];for(let i=0;i+1<F.length;i++)arcs(BP(y0+(F[i]+F[i+1])/2*H,o.jh||0.016,o.jp||0.01,0.002));}
+ // inside, each band shows as a dark groove (photo of a ring lying on its side)
+ if(o.grooves&&M_.groove)for(const f of FR){const g=new THREE.CylinderGeometry(R-0.003,R-0.003,bh*0.55,S,1,true);g.translate(0,y0+f*H,0);groove.push(g);}
+ const yb=y0+(o.bottom!==false?ft*1.1:0),yt=y1-(o.top!==false?ft:0);
+ if(o.fins){
+   // seams after the drawings and photos: the two segment ends bent out as fins, bolted together through both fins (o.nb bolts per seam, hex nuts)
+   const tf=0.008,pf=o.fp||0.03,nb=o.nb||4;
+   for(let k=0;k<ns;k++){const a=s0+k*TAU/ns,sa=Math.sin(a),ca=Math.cos(a),tx=ca,tz=-sa;
+     for(const sg of [-1,1]){const d=sg*(tf/2+0.0015),rr=R+pf/2-0.002;rib.push(placed(new THREE.BoxGeometry(tf,yt-yb,pf),rr*sa+tx*d,(yb+yt)/2,rr*ca+tz*d,0,a,0));}
+     for(let i=0;i<nb;i++){const y=nb>1?yb+0.045+i*(yt-yb-0.09)/(nb-1):(yb+yt)/2,rr=R+pf*0.55;
+       bolt.push(placed(new THREE.CylinderGeometry(0.0045,0.0045,2*tf+0.014,8),rr*sa,y,rr*ca,0,a,Math.PI/2));
+       for(const sg of [-1,1]){const d=sg*(tf+0.0045);bolt.push(placed(new THREE.CylinderGeometry(0.0085,0.0085,0.006,6),rr*sa+tx*d,y,rr*ca+tz*d,0,a,Math.PI/2));}}}
+ }else{
+   // seams: a flat strap beside a recessed channel with bolts
+   for(let k=0;k<ns;k++){const a=s0+k*TAU/ns,sa=Math.sin(a),ca=Math.cos(a),ta=V(ca,0,-sa);
+     const sw=o.sw||0.028,sp=o.sp||0.02;
+     const st=placed(new THREE.BoxGeometry(sw,yt-yb,sp),0,(yb+yt)/2,0,0,a,0);st.translate((R+sp/2-0.002)*sa-ta.x*gapA*R*0.22,0,(R+sp/2-0.002)*ca-ta.z*gapA*R*0.22);rib.push(st);
+     const bx=(R+0.004)*sa+ta.x*gapA*R*0.18,bz=(R+0.004)*ca+ta.z*gapA*R*0.18;
+     for(let y=yb+0.07;y<yt-0.04;y+=(o.bstep||0.2))bolt.push(placed(new THREE.BoxGeometry(0.016,0.016,0.012),bx,y,bz,0,a,0));}}
+ add(mergeGeos(rib),M_.rib,0,0,0,{parent:par});if(bolt.length)add(mergeGeos(bolt),M_.bolt||mBolt,0,0,0,{parent:par,cast:false});
+ if(groove.length)add(mergeGeos(groove),M_.groove,0,0,0,{parent:par,cast:false});}
+// koltso rings as on the yard photo: matte black HDPE with grey dust and mud patches and a few drips (1 m per repeat, tiles seamlessly)
+const k7dust=cvs(512,512,(g,w,h)=>{g.fillStyle='#2e3032';g.fillRect(0,0,w,h);let sd=11;const rn=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+  const wrap=(x,y,r,fn)=>{for(const dx of [-w,0,w])for(const dy of [-h,0,h])if(x+dx>-r&&x+dx<w+r&&y+dy>-r&&y+dy<h+r)fn(x+dx,y+dy);};
+  for(let i=0;i<150;i++){const x=rn()*w,y=rn()*h,r=20+rn()*80,v=rn()<0.5?'60,62,64':'26,27,28',a=0.1+rn()*0.14;
+    wrap(x,y,r,(X,Y)=>{const gr=g.createRadialGradient(X,Y,0,X,Y,r);gr.addColorStop(0,`rgba(${v},${a})`);gr.addColorStop(1,`rgba(${v},0)`);g.fillStyle=gr;g.fillRect(X-r,Y-r,2*r,2*r);});}
+  for(let i=0;i<18;i++){const cx=rn()*w,cy=rn()*h,R0=10+rn()*30,a=0.12+rn()*0.22,n=14+rn()*26|0;g.fillStyle=`rgba(80,83,86,${a})`;
+    for(let k=0;k<n;k++){const t=rn()*6.283,q=Math.sqrt(rn())*R0,rx=3+rn()*10,ry=2+rn()*7,ro=rn()*3;wrap(cx+Math.cos(t)*q,cy+Math.sin(t)*q*0.7,14,(X,Y)=>{g.beginPath();g.ellipse(X,Y,rx,ry,ro,0,6.283);g.fill();});}}
+  g.lineCap='round';for(let i=0;i<44;i++){const x=rn()*w,y=rn()*h,L=20+rn()*110,dx=(rn()-.5)*4;g.strokeStyle=`rgba(84,87,90,${0.07+rn()*0.12})`;g.lineWidth=1+rn()*2.5;
+    wrap(x,y+L/2,L,(X,Y)=>{g.beginPath();g.moveTo(X,Y-L/2);g.lineTo(X+dx,Y+L/2);g.stroke();});}
+  for(let i=0;i<9000;i++){g.fillStyle=rn()<0.5?'rgba(255,255,255,.03)':'rgba(0,0,0,.07)';const sz=0.7+rn()*1.3;g.fillRect(rn()*w,rn()*h,sz,sz);}});
+const k7map=tex(k7dust);
+const mK7=new THREE.MeshStandardMaterial({color:0xffffff,map:k7map,roughness:0.8,envMapIntensity:0.45,bumpMap:pebB,bumpScale:0.0018});
+const mK7r=new THREE.MeshStandardMaterial({color:lin(0x202122),roughness:0.8,envMapIntensity:0.4});
+const mK7i=new THREE.MeshStandardMaterial({color:lin(0xa4a4a4),map:k7map,roughness:0.9,envMapIntensity:0.3,side:THREE.BackSide});
+const mK7g=new THREE.MeshStandardMaterial({color:lin(0x141516),roughness:0.9,envMapIntensity:0.2,side:THREE.BackSide});
 const mK7b=new THREE.MeshStandardMaterial({color:lin(0x3b4046),metalness:0.55,roughness:0.45});   // dark steel bolts (product photos), not bright squares
-const K7MAT={wall:mK7,inner:mK7i,rib:mK7r,bolt:mK7b};
-// bands and seams after the working drawings: Ф-700 one band, 3 seams · Ф-1000 two bands, 4 seams · Ф-1500 three bands, 6 seams;
-// flat bands with a small chamfer (photos), [] = a plain neck without bands
+const K7MAT={wall:mK7,inner:mK7i,rib:mK7r,bolt:mK7b,groove:mK7g};
+// bands after the working drawings: Ф-700 one band (56 mm, 17 mm proud), 3 seams, 4 bolts each · Ф-1000 two bands (73 mm, 25 mm), 4 seams,
+// 5 bolts · Ф-1500 three bands, 6 seams, 6 bolts; as on the photos a thin flat lip at each end, thin plank joints between the bands and
+// a matte dusty surface; [] = a plain neck without bands
 function koltso(par,R,H,y0,bands){const big=R>0.42;
- bandModule(par,R,H,y0,{mat:K7MAT,fr:bands||[0.32,0.68],bh:big?0.08:0.065,bp:big?0.026:0.022,be:0.005,fw:big?0.036:0.03,ft:big?0.034:0.028,gap:big?0.08:0.065,bstep:big?0.2:0.16,seams:R<0.42?3:(R<0.6?4:6)});}
+ bandModule(par,R,H,y0,{mat:K7MAT,fr:bands||[0.32,0.68],bh:big?0.075:0.058,bp:big?0.025:0.018,be:0.007,fw:big?0.04:0.03,ft:big?0.022:0.018,fe:0.003,
+  gap:big?0.08:0.065,seams:R<0.42?3:(R<0.6?4:6),uvm:1,joints:1,grooves:1,fins:1,nb:Math.max(2,Math.round(H*(R<0.42?8:(R<0.6?7.2:6.7))))});}
 const mK7L=new THREE.MeshPhysicalMaterial({color:0x080809,roughness:0.55,clearcoat:0.3,clearcoatRoughness:0.35,envMapIntensity:0.4});
 function flatLid(par,LR,y0,ribs){add(new THREE.CylinderGeometry(LR,LR,0.04,72),mK7L,0,y0+0.02,0,{parent:par});
  add(new THREE.CylinderGeometry(LR,LR,0.05,72,1,true),mK7L,0,y0-0.01,0,{cast:false,parent:par});
@@ -2368,7 +2398,8 @@ function vwLabels(clear){const C=!clear&&VW.G&&VW.G.userData.ctl;
 function vwUpdate(dt){if(VW.lk!==stage.clientWidth+'x'+stage.clientHeight){vwLayout();vwFit();}
  VW.t+=dt;const C=VW.G&&VW.G.userData.ctl;if(C)C.update(dt,VW.t);VW.tgt.lerp(VW.dtg,1-Math.exp(-dt*4.5));
  VW.idle+=dt;if(VW.idle>1.4&&!ptr.size){const sw=C&&C.sway&&C.sway[C.mode];   // idle: a gentle sway (about 20 degrees each way); a cut-open view sways on its open side
-   if(!VW.swb)VW.swb={b:sw?nearAngle(VW.th,sw[0]):VW.th,t:0};VW.swb.t+=dt;VW.dth=VW.swb.b+Math.sin(VW.swb.t*0.5)*(sw?sw[1]:0.36)*Math.min(1,Math.pow(VW.dr/(VW.fitR||VW.dr),2))*Math.min(1,VW.swb.t/2.5);}else VW.swb=null;   // smaller when zoomed inconst k=1-Math.exp(-dt*7);VW.th+=(VW.dth-VW.th)*k;VW.ph+=(VW.dph-VW.ph)*k;VW.r+=(VW.dr-VW.r)*(1-Math.exp(-dt*4.5));
+   if(!VW.swb)VW.swb={b:sw?nearAngle(VW.th,sw[0]):VW.th,t:0};VW.swb.t+=dt;VW.dth=VW.swb.b+Math.sin(VW.swb.t*0.5)*(sw?sw[1]:0.36)*Math.min(1,Math.pow(VW.dr/(VW.fitR||VW.dr),2))*Math.min(1,VW.swb.t/2.5);}else VW.swb=null;   // smaller when zoomed in
+ const k=1-Math.exp(-dt*7);VW.th+=(VW.dth-VW.th)*k;VW.ph+=(VW.dph-VW.ph)*k;VW.r+=(VW.dr-VW.r)*(1-Math.exp(-dt*4.5));
  const sp=Math.sin(VW.ph);VW.cam.position.set(VW.tgt.x+VW.r*sp*Math.sin(VW.th),VW.tgt.y+VW.r*Math.cos(VW.ph),VW.tgt.z+VW.r*sp*Math.cos(VW.th));VW.cam.lookAt(VW.tgt);
  if(C){VW.cam.updateMatrixWorld();vwLabels();}}
 $('vClose').onclick=closeViewer;
