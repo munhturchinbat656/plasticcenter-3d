@@ -1221,9 +1221,12 @@ function bandModule(par,R,H,y0,o){const S=SMALL?40:64,y1=y0+H,M_=o.mat,ns=o.seam
 const mK7=new THREE.MeshPhysicalMaterial({color:0x090a0b,roughness:0.52,clearcoat:0.22,clearcoatRoughness:0.42,envMapIntensity:0.32,bumpMap:pebB,bumpScale:0.004});
 const mK7r=new THREE.MeshPhysicalMaterial({color:0x0d0e10,roughness:0.46,clearcoat:0.24,clearcoatRoughness:0.42,envMapIntensity:0.32});
 const mK7i=new THREE.MeshStandardMaterial({color:0x0c0d0f,roughness:0.85,envMapIntensity:0.2,side:THREE.BackSide});
-const K7MAT={wall:mK7,inner:mK7i,rib:mK7r};
+const mK7b=new THREE.MeshStandardMaterial({color:lin(0x3b4046),metalness:0.55,roughness:0.45});   // dark steel bolts (product photos), not bright squares
+const K7MAT={wall:mK7,inner:mK7i,rib:mK7r,bolt:mK7b};
+// bands and seams after the working drawings: Ф-700 one band, 3 seams · Ф-1000 two bands, 4 seams · Ф-1500 three bands, 6 seams;
+// flat bands with a small chamfer (photos), [] = a plain neck without bands
 function koltso(par,R,H,y0,bands){const big=R>0.42;
- bandModule(par,R,H,y0,{mat:K7MAT,fr:bands&&bands.length===2?bands:[0.31,0.66],bh:big?0.08:0.065,bp:big?0.028:0.024,fw:big?0.036:0.03,ft:big?0.034:0.028,gap:big?0.08:0.065,bstep:big?0.2:0.16});}
+ bandModule(par,R,H,y0,{mat:K7MAT,fr:bands||[0.32,0.68],bh:big?0.08:0.065,bp:big?0.026:0.022,be:0.005,fw:big?0.036:0.03,ft:big?0.034:0.028,gap:big?0.08:0.065,bstep:big?0.2:0.16,seams:R<0.42?3:(R<0.6?4:6)});}
 const mK7L=new THREE.MeshPhysicalMaterial({color:0x080809,roughness:0.55,clearcoat:0.3,clearcoatRoughness:0.35,envMapIntensity:0.4});
 function flatLid(par,LR,y0,ribs){add(new THREE.CylinderGeometry(LR,LR,0.04,72),mK7L,0,y0+0.02,0,{parent:par});
  add(new THREE.CylinderGeometry(LR,LR,0.05,72,1,true),mK7L,0,y0-0.01,0,{cast:false,parent:par});
@@ -2270,8 +2273,8 @@ const PRODUCTS={
    const C={mode:'inside',labels:{inside:[L('Вакуум насос',0,0.72,0.06),L('Соруулах хоолой · дээд ам',0.24,1.25,0),L('Хажуугийн ам',0.55,0.45,0),L('2 ш Кольцо 700',-0.36,0.3,-0.06)],
      whole:[L('2 ш Кольцо 700',-0.37,0.3,0.05),L('Таг',-0.1,1.08,0.1),L('Соруулах хоолой',0.24,1.25,0)]},sway:{inside:[0.3,0.45]},get lk(){return S.lk;},
     set(md){C.mode=md;show(md);S.lk=0;},pose:show,restore(){show(C.mode);},update(dt){S.lk=Math.min(1,S.lk+dt*2.5);}};g.userData.ctl=C;}},
- k700:{cache:1,title:()=>'Кольцо 700',sub:()=>'Ø0.7 × 0.5 м · 27 кг',build:g=>koltso(g,0.35,0.5,0,[0.31,0.66])},
- k1000:{cache:1,title:()=>'Кольцо 1000',sub:()=>'Ø1 × 0.7 м · 64 кг',build:g=>koltso(g,0.5,0.7,0,[0.31,0.66])},
+ k700:{cache:1,title:()=>'Кольцо 700',sub:()=>'Ø0.7 × 0.5 м · 27 кг',build:g=>koltso(g,0.35,0.5,0,[0.5])},
+ k1000:{cache:1,title:()=>'Кольцо 1000',sub:()=>'Ø1 × 0.7 м · 64 кг',build:g=>koltso(g,0.5,0.7,0,[0.32,0.68])},
  tank:{sized:1,price:1,view:[0.0,1.42],title:k=>`Пластик танк · ${curS(k).t} тн`,sub:k=>{const s=curS(k);return `Ø${s.D} × ${s.Hm} м · ${s.kg} кг · ${s.ppl} хүнд`;},
   build:(g,k)=>{const s=curS(k);latticeTank(g,s.R,s.n,s.MH,s.look,s.lid);}},
  septic:{sized:1,price:1,title:k=>`Септик танк · ${curS(k).t} тн`,sub:k=>{const s=curS(k);return `Ø${s.od} × ${s.L} м · ${s.ppl} хүнд${s.lpd?` · ${s.lpd} л/хоног`:''} · ${s.nr} хүзүүтэй`;},
