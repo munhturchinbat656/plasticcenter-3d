@@ -352,7 +352,7 @@ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;r
 // ---------- helpers ----------
 let seed=20261021;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
-function cvs(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);return c;}
+function cvs(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d',{willReadFrequently:true}),w,h);return c;}   // CPU-side canvases: the snow repaint reads their pixels back
 function tex(c,rx=1,ry=1,srgb=true){const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);if(srgb)t.encoding=THREE.sRGBEncoding;t.anisotropy=COARSE?4:8;return t;}
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const smooth=x=>{x=clamp(x,0,1);return x*x*x*(x*(x*6-15)+10);};
@@ -389,9 +389,12 @@ const CUT=new THREE.Plane(V(0,0,-1),0);
 const OFFP=1e4;
 const SW=[null,new THREE.Plane(V(1,0,0),OFFP),new THREE.Plane(V(1,0,0),OFFP),new THREE.Plane(V(1,0,0),OFFP)];
 const TC=[null,new THREE.Plane(V(0,0,-1),OFFP),new THREE.Plane(V(0,0,-1),OFFP),new THREE.Plane(V(0,0,-1),OFFP)];
-const NCUT=new THREE.Plane(V(0,0,-1),OFFP);
-const HF={toilet:null,pos:V(0,0,0),mats:[],k:0};   // Багц 1: the house fades near the toilet   // Багц 1: keeps only the back half of the pump's rings and lid (set to the shaft's z)
-const CUTONLY=[CUT];
+const NCUT=new THREE.Plane(V(0,0,-1),OFFP);   // Багц 1: keeps only the back half of the pump's rings and lid (set to the shaft's z)
+// KEEP never clips: every clipped yard material carries exactly two planes, so materials that differ only in their
+// plane count share one shader program (fewer programs to compile on the first frame)
+const KEEP=new THREE.Plane(V(0,1,0),1e6);
+const HF={toilet:null,pos:V(0,0,0),mats:[],k:0};   // Багц 1: the house fades near the toilet
+const CUTONLY=[CUT,KEEP];
 
 // ---------- background, environment, lights ----------
 function bgTex(dark){const t=tex(cvs(16,512,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);
@@ -1017,10 +1020,10 @@ const pebC=cvs(512,512,(g,w,h)=>{g.fillStyle='#808080';g.fillRect(0,0,w,h);let s
 const pebB=tex(pebC,1,1,false),pebM=tex(pebC,1,1,true);
 const pebSoftC=cvs(256,256,(g,w,h)=>{g.fillStyle='#808080';g.fillRect(0,0,w,h);let sd=9;const rn=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};for(let i=0;i<120;i++){const x=rn()*w,y=rn()*h,r=8+rn()*30,v=rn()<0.5?255:0,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(${v},${v},${v},.07)`);gr.addColorStop(1,`rgba(${v},${v},${v},0)`);g.fillStyle=gr;g.fillRect(x-r,y-r,2*r,2*r);}});
 const pebSoftM=tex(pebSoftC,1,1,true);
-const mRingW=new THREE.MeshPhysicalMaterial({color:0x262523,map:pebM,roughness:0.62,clearcoat:0.18,clearcoatRoughness:0.55,envMapIntensity:0.5,bumpMap:pebB,bumpScale:0.022});
+const mRingW=new THREE.MeshStandardMaterial({color:0x262523,map:pebM,roughness:0.6,envMapIntensity:0.5,bumpMap:pebB,bumpScale:0.022});
 const mRingWi=new THREE.MeshStandardMaterial({color:0x1e1f22,map:pebSoftM,roughness:0.78,envMapIntensity:0.3,side:THREE.BackSide});
-const mRingB=new THREE.MeshPhysicalMaterial({color:0x0e0d0c,roughness:0.6,clearcoat:0.06,clearcoatRoughness:0.7,envMapIntensity:0.16});
-const mTankLid=new THREE.MeshPhysicalMaterial({color:0x08090a,roughness:0.72,clearcoat:0.08,clearcoatRoughness:0.6,envMapIntensity:0.2});
+const mRingB=new THREE.MeshStandardMaterial({color:0x0e0d0c,roughness:0.6,envMapIntensity:0.16});
+const mTankLid=new THREE.MeshStandardMaterial({color:0x08090a,roughness:0.72,envMapIntensity:0.2});
 const mBolt=stdL(0xa9adb3,{metalness:0.55,roughness:0.45}),mBoltT=stdL(0x44484d,{metalness:0.45,roughness:0.5}),mDarkC=stdL(0x040405,{roughness:0.7});
 function makeRing(par,R,H,y0,fr,bh,bp){const y1=y0+H;
  const g=new THREE.CylinderGeometry(R,R,H,SMALL?64:96,1,true);g.translate(0,(y0+y1)/2,0);const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*(TAU*R),uv.getY(i)*H);
@@ -1039,7 +1042,7 @@ function ringLid(par,LR,y0,mat=M.hdpeLid){add(new THREE.CylinderGeometry(LR,LR,0
  const hb=[];for(const sx of [-1,1])hb.push(placed(new THREE.BoxGeometry(LR*0.18,0.01,0.03),sx*LR*0.6,y0+0.045,0,0,0,0));add(mergeGeos(hb),mDarkC,0,0,0,{cast:false,parent:par});}
 // the tank's own lid (price-list renders): a low cone up to an octagonal hatch collar with its cover, cross ribs down the slope;
 // 'flat' for the Ø1 m tanks, 'cone' for Ø1.5 m and the 8.5 t, 'steep' for the 5.6 t
-const mLidP=new THREE.MeshPhysicalMaterial({color:0x040405,roughness:0.56,clearcoat:0.16,clearcoatRoughness:0.5,envMapIntensity:0.17});
+const mLidP=new THREE.MeshStandardMaterial({color:0x040405,roughness:0.54,envMapIntensity:0.17});
 function prodLid(par,R,type){const LR=R+0.035,S=SMALL?48:72,h=type==='steep'?0.3:type==='cone'?(R>0.8?0.14:0.12):0.025,rc=type==='flat'?0.2:(type==='steep'?0.42:R*0.44),rh=type==='flat'?0.16:Math.min(0.3,rc*0.82),y1=0.045+h;
  const top=[lathe([[R-0.02,0],[LR,0],[LR+0.006,0.012],[LR+0.004,0.034],[LR-0.006,0.045],[R+0.006,0.045],[rc,y1],[0,y1]],S)];
  const col=new THREE.CylinderGeometry(rh*0.95,rh,0.07,8,1,false);col.rotateY(Math.PI/8);col.translate(0,y1+0.035,0);top.push(col);
@@ -1482,7 +1485,7 @@ function buildGer(G){const R=2.55,HW=1.65,RISE=0.87,RC=0.62,DH=1.55,DW=0.9;
 function buildCabin(G){const R=0.68,yb=0.075,H=1.88,N=104,HW=0.355,TH=Math.asin(HW/R),DZ=R*Math.cos(TH),CT=0.085;
  const mBody=new THREE.MeshPhysicalMaterial({color:lin(0xf6f7f4),roughness:0.3,clearcoat:0.55,clearcoatRoughness:0.2,envMapIntensity:0.9});
  const rm=pebM.clone();rm.needsUpdate=true;rm.repeat.set(3,3);const rb=pebB.clone();rb.needsUpdate=true;rb.repeat.set(3,3);
- const mRec=new THREE.MeshPhysicalMaterial({color:lin(0x3a3a3a),map:rm,bumpMap:rb,bumpScale:0.015,roughness:0.78,clearcoat:0.12,clearcoatRoughness:0.6,envMapIntensity:0.35});
+ const mRec=new THREE.MeshStandardMaterial({color:lin(0x3a3a3a),map:rm,bumpMap:rb,bumpScale:0.015,roughness:0.77,envMapIntensity:0.35});
  const mMet=new THREE.MeshPhysicalMaterial({color:lin(0x1c1d1f),roughness:0.38,metalness:0.55,clearcoat:0.3,clearcoatRoughness:0.3});
  const mGlass=new THREE.MeshPhysicalMaterial({color:lin(0x0b0c0d),roughness:0.2,metalness:0,clearcoat:0.7,clearcoatRoughness:0.08,envMapIntensity:0.4});
  const mHinge=stdL(0x9a9ea4,{metalness:0.8,roughness:0.32});
@@ -1689,7 +1692,7 @@ function houseP3(G){const c={x0:-8.5,x1:-1.6,z0:-6.0,z1:1.4,T:0.3,FY:0.45,floors
  // bathroom: flush toilet against the outer wall, vanity, shower corner
  const ft=flushToilet(G,-2.24,FY+0.012,-0.62,-Math.PI/2);
  vanity(G,-2.55,FY+0.012,ZB1+0.26,0);
- {const mG=new THREE.MeshPhysicalMaterial({color:0xcfe6ef,roughness:0.05,transparent:true,opacity:0.28,depthWrite:false});add(new THREE.BoxGeometry(0.86,0.06,0.86),M.ceramic,-3.3,FY+0.04,-1.86,{parent:G});
+ {const mG=new THREE.MeshStandardMaterial({color:0xcfe6ef,roughness:0.05,transparent:true,opacity:0.28,depthWrite:false});add(new THREE.BoxGeometry(0.86,0.06,0.86),M.ceramic,-3.3,FY+0.04,-1.86,{parent:G});
   add(new THREE.BoxGeometry(0.01,1.9,0.86),mG,-2.87,FY+1.0,-1.86,{parent:G,cast:false});add(new THREE.CylinderGeometry(0.1,0.1,0.02,20),M.chrome,-3.4,FY+2.0,-2.1,{parent:G,cast:false});}
  // ground floor living area: kitchen counter + fridge, dining table, sofa, stairs to the first floor
  {const mK=std(0xdfe3e6,{roughness:0.4}),mKt=std(0x3d4046,{roughness:0.35});
@@ -1987,7 +1990,7 @@ const CLIPC={};
 function clipify(root,k,fresh){const cache=fresh?new Map():(CLIPC[k]||(CLIPC[k]=new Map()));
  if(fresh)for(let j=INSIDE.length-1;j>=0;j--)if(!INSIDE[j].m.parent)INSIDE.splice(j,1);
  root.traverse(m=>{if(!(m.isMesh||m.isInstancedMesh))return;
-   const cat=m.userData.cat==='front'?'f':(m.userData.ncut?'n':(inTank(m)?'t':'d'));const planes=cat==='f'?[CUT,SW[k]]:(cat==='n'?[SW[k],NCUT]:(cat==='t'?[SW[k],TC[k]]:[SW[k]]));
+   const cat=m.userData.cat==='front'?'f':(m.userData.ncut?'n':(inTank(m)?'t':'d'));const planes=cat==='f'?[CUT,SW[k]]:(cat==='n'?[SW[k],NCUT]:(cat==='t'?[SW[k],TC[k]]:[SW[k],KEEP]));
    const conv=mat=>{const key=mat.uuid+cat;let c=cache.get(key);if(!c){c=mat.clone();c.clippingPlanes=planes;c.clipShadows=true;if(fresh)c.userData.dyn=1;cache.set(key,c);}return c;};
    m.material=Array.isArray(m.material)?m.material.map(conv):conv(m.material);
    if(m.userData.inside){INSIDE.push({m,k});m.visible=false;}});}
@@ -2425,9 +2428,8 @@ try{
    if(!done.has(m)){done.add(m);if(m.color&&green(m.color.r,m.color.g,m.color.b))m.color.lerp(SNOW,amt);}}
   if(std){if(o.geometry&&o.geometry.attributes)tint(o.geometry.attributes.color,0.62);tint(o.instanceColor,0.62);}});
 }catch(e){console.warn('winter look skipped',e);}
-for(let k=1;k<=3;k++)PK[k].G.visible=true;
-try{renderer.compile(scene,cam);}catch(e){}
-PK[2].G.visible=false;PK[3].G.visible=false;
+// (no renderer.compile here: it compiles without the clipping planes, so the first frame had to compile every shader again)
+PK[1].G.visible=true;PK[2].G.visible=false;PK[3].G.visible=false;
 renderSheet(1);sheetEl.classList.remove('fade');syncCards(1);reframe(true);
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{for(const L of LBLS)L.w=0;});
 {const lg=new Image();lg.onload=()=>{const g=pcC.getContext('2d'),W=pcC.width,H=pcC.height;g.clearRect(0,0,W,H);g.fillStyle='#fff';rrect(g,4,4,W-8,H-8,34);g.fill();const s=Math.min((W-72)/lg.width,(H-56)/lg.height),w=lg.width*s,h=lg.height*s;g.drawImage(lg,(W-w)/2,(H-h)/2,w,h);M.pc.map.needsUpdate=true;};lg.src='logo.png';}
@@ -2435,6 +2437,13 @@ let last=performance.now(),tNow=0,raf=0;
 function loop(now){raf=requestAnimationFrame(loop);if(document.hidden){last=now;return;}const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;
  if(VW.open){vwUpdate(dt);renderer.render(VW.scene,VW.cam);return;}tNow+=dt;update(dt,tNow);renderer.render(scene,cam);placeLabels();}
 raf=requestAnimationFrame(loop);window.READY=true;
+// once the first view is up and the page is idle, draw packages 2 and 3 once into a 1-pixel corner: their shaders are then
+// compiled before the first package switch (otherwise the switch stalls for a second)
+{const warm=[2,3],idle=f=>window.requestIdleCallback?requestIdleCallback(f,{timeout:3000}):setTimeout(f,300);
+ const next=()=>{if(!warm.length)return;if(ST.tr||VW.open||ptr.size){setTimeout(()=>idle(next),800);return;}const k=warm.shift(),G=PK[k].G;
+  if(!G.visible){const fv=FX.visible,pv=pencil.visible;G.visible=FX.visible=pencil.visible=true;renderer.setScissorTest(true);renderer.setScissor(0,0,1,1);try{renderer.render(scene,cam);}catch(e){}renderer.setScissorTest(false);G.visible=false;FX.visible=fv;pencil.visible=pv;}   // with the sweep's own effects
+  window.WARM=(window.WARM||0)+1;idle(next);};
+ setTimeout(()=>idle(next),1200);}
 {const q=location.search+location.hash,m=q.match(/[?&#]une(?:=([123]))?(?![a-zа-я])/i),
   fb=/[?&]fbclid=/.test(location.search)||/facebook\.|fb\.me|instagram\./i.test(document.referrer)||/FBAN|FBAV|FB_IAB|Instagram/.test(navigator.userAgent);
  if(!NOPRICE&&(m||(fb&&!/[?&]shot=/.test(location.search))))setTimeout(()=>{if(VW.open||ST.tr)return;const k=m&&m[1]?+m[1]:1;openViewer(k===3?'septic':'tank',k);if(!$('viewer').classList.contains('wide'))vpOpen(true);},500);}
@@ -2442,7 +2451,8 @@ renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();c
 window.__app={vpPkg,vpOpen,BATCH,info:()=>({calls:renderer.info.render.calls,tris:renderer.info.render.triangles,geo:renderer.info.memory.geometries,tex:renderer.info.memory.textures,prog:renderer.info.programs.length}),goPkg,ST,PK,O,cam,reframe,setTank,tapAt,pickAt,openViewer,closeViewer,VW,step:(n=30,dt=1/30)=>{for(let i=0;i<n;i++){tNow+=dt;update(dt,tNow);placeLabels();}renderer.render(scene,cam);placeLabels();}};
 }
 // build after the first paint so the page shows its frame and the loader right away
-const go=()=>{try{APP();}catch(e){console.error(e);const f=document.getElementById('fb');if(f)f.hidden=false;}const l=document.getElementById('load');if(l)l.hidden=true;};
+const go=()=>{const l=document.getElementById('load');try{APP();}catch(e){console.error(e);const f=document.getElementById('fb');if(f)f.hidden=false;if(l)l.hidden=true;return;}
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{if(l)l.hidden=true;}));};   // the chip stays until the first frame (its shaders) is drawn
 requestAnimationFrame(()=>setTimeout(go,30));
 })();
 </script>
