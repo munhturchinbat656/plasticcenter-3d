@@ -2185,7 +2185,7 @@ function update(dt,t){
  // section and tank-cut animations
  ST.cutK+=((ST.cut?1:0)-ST.cutK)*Math.min(1,dt*5);if(Math.abs(ST.cutK-(ST.cut?1:0))<0.002)ST.cutK=ST.cut?1:0;
  CUT.constant=lerp(ZFR+0.3,0,smooth(ST.cutK));
- for(let k=1;k<=3;k++){const tg=ST.ins[k]?1:0;ST.inK[k]+=(tg-ST.inK[k])*Math.min(1,dt*4.5);if(Math.abs(ST.inK[k]-tg)<0.002)ST.inK[k]=tg;const p=PK[k];TC[k].constant=ST.inK[k]<=0.001?OFFP:lerp(p.tankZ+p.tankR+0.3,p.tankZ,smooth(ST.inK[k]));}
+ for(let k=1;k<=3;k++){const tg=(ST.ins[k]||ST.view==='near')?1:0;ST.inK[k]+=(tg-ST.inK[k])*Math.min(1,dt*4.5);if(Math.abs(ST.inK[k]-tg)<0.002)ST.inK[k]=tg;const p=PK[k];TC[k].constant=ST.inK[k]<=0.001?OFFP:lerp(p.tankZ+p.tankR+0.3,p.tankZ,smooth(ST.inK[k]));}
  for(const o of INSIDE)o.m.visible=ST.inK[o.k]>0.55;
  // interior lights follow their package through the sweep
  for(const o of LIGHTS){let v=0;if(ST.tr){v=o.pk===ST.tr.a?1-u:(o.pk===ST.tr.b?u:0);}else v=o.pk===ST.cur?1:0;o.l.intensity=o.base*v;}
